@@ -22,9 +22,9 @@ public static class CustomHatManager
 		get
 		{
 			var (owner, repository) = Repository;
-			return Helpers.isChinese() ? $"https://gitee.com/kuai-fang/the-other-hats2/raw/master" : $"https://raw.githubusercontent.com/{owner}/{repository}/master";
-		}
-	}
+            return Helpers.isChinese() ? "https://dl.fangkuai.fun/ModFiles/TheOtherRolesGMIA/TheOtherHats" : $"https://raw.githubusercontent.com/{owner}/{repository}/master";
+        }
+    }
 
 	internal static readonly string ManifestFileName = "CustomHats.json";
 
