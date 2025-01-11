@@ -102,9 +102,13 @@ namespace TheOtherRoles
 
 		public override void Load()
 		{
-			Logger = Log;
+            Logger = Log;
 			Instance = this;
-			_ = Helpers.checkBeta(); // Exit if running an expired beta
+
+            ZipsLoad.Load();
+            ModTranslation.Load();
+
+            _ = Helpers.checkBeta(); // Exit if running an expired beta
 
 			DebugMode = Config.Bind("Custom", "Enable Debug Mode", "false");
 			GhostsSeeInformation = Config.Bind("Custom", "Ghosts See Remaining Tasks", true);
@@ -129,7 +133,10 @@ namespace TheOtherRoles
 			ServerManager.DefaultRegions = new Il2CppReferenceArray<IRegionInfo>(new IRegionInfo[0]);
 			UpdateRegions();
 
-			DebugMode = Config.Bind("Custom", "Enable Debug Mode", "false");
+            CustomOptionHolder.Load();
+            CustomColors.Load();
+            CustomHatManager.LoadHats();
+            DebugMode = Config.Bind("Custom", "Enable Debug Mode", "false");
 			Harmony.PatchAll();
 
 			if (ToggleCursor.Value)
@@ -144,7 +151,10 @@ namespace TheOtherRoles
 				return;
 			}
 			EventUtility.Load();
-			_ = RoleInfo.loadReadme();
+            SubmergedCompatibility.Initialize();
+            MainMenuPatch.addSceneChangeCallbacks();
+            _ = RoleInfo.loadReadme();
+            AddToKillDistanceSetting.addKillDistance();
             AddComponent<Coroutines.Component>();
         }
 	}

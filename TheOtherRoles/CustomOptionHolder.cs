@@ -985,7 +985,7 @@ namespace TheOtherRoles
 
 			modifierInvert = CustomOption.Create(1080, Types.Modifier, new TranslationInfo(RoleId.Invert, Color.yellow), rates, null, true);
 			modifierInvertQuantity = CustomOption.Create(1081, Types.Modifier, new TranslationInfo("Opt-Invert", 1, Color.yellow), ratesModifier, modifierInvert);
-			modifierInvertDuration = CustomOption.Create(1082, Types.Modifier, new TranslationInfo("Opt-Invert"), 3f, 1f, 15f, 1f, modifierInvert);
+			modifierInvertDuration = CustomOption.Create(1082, Types.Modifier, new TranslationInfo("Opt-Invert", 2), 3f, 1f, 15f, 1f, modifierInvert);
 
 			modifierChameleon = CustomOption.Create(1090, Types.Modifier, new TranslationInfo(RoleId.Chameleon, Color.yellow), rates, null, true);
 			modifierChameleonQuantity = CustomOption.Create(1091, Types.Modifier, new TranslationInfo("Opt-Chameleon", 1, Color.yellow), ratesModifier, modifierChameleon);

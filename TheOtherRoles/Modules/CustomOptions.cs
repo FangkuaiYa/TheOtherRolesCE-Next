@@ -60,7 +60,7 @@ namespace TheOtherRoles
 			//this.name = parent == null ? name : "- " + name;
 			this.translationInfo = translationInfo;
 			if (parent != null)
-				this.translationInfo.AddHeadText("</b>- ");
+				this.translationInfo.AddHeadText("- ");
 			this.selections = selections;
 			int index = Array.IndexOf(selections, defaultValue);
 			this.defaultSelection = index >= 0 ? index : 0;
@@ -561,9 +561,6 @@ namespace TheOtherRoles
 					if ((int)optionType == 99)
 						categoryHeaderMasked.Title.text = new Dictionary<CustomOptionType, string>() { { CustomOptionType.Impostor, ModTranslation.GetString("Opt-General", 15) }, { CustomOptionType.Neutral, ModTranslation.GetString("Opt-General", 14) },
 							{ CustomOptionType.Crewmate, ModTranslation.GetString("Opt-General", 13) }, { CustomOptionType.Modifier, ModTranslation.GetString("Opt-General", 16) } }[curType];
-					var color = categoryHeaderMasked.Title.text.Contains("<color=") && (int)optionType != 99 ? Helpers.HexToColor(categoryHeaderMasked.Title.text.Substring(8, 6)) : Color.white;
-					categoryHeaderMasked.Title.outlineColor = color;
-					categoryHeaderMasked.Title.outlineWidth = 0.2f;
 					categoryHeaderMasked.transform.SetParent(__instance.settingsContainer);
 					categoryHeaderMasked.transform.localScale = Vector3.one;
 					categoryHeaderMasked.transform.localPosition = new Vector3(-9.77f, num, -2f);
@@ -599,9 +596,6 @@ namespace TheOtherRoles
 				}
 				if ((int)optionType == 99)
 				{
-					var color = option.getTitle().Contains("<color=") ? Helpers.HexToColor(option.getTitle().Substring(8, 6)) : Color.white;
-					viewSettingsInfoPanel.titleText.outlineColor = color;
-					viewSettingsInfoPanel.titleText.outlineWidth = 0.2f;
 					if (option.type == CustomOptionType.Modifier)
 						viewSettingsInfoPanel.settingText.text = viewSettingsInfoPanel.settingText.text + GameOptionsDataPatch.buildModifierExtras(option);
 				}
@@ -763,9 +757,6 @@ namespace TheOtherRoles
 					CategoryHeaderMasked categoryHeaderMasked = UnityEngine.Object.Instantiate<CategoryHeaderMasked>(menu.categoryHeaderOrigin, Vector3.zero, Quaternion.identity, menu.settingsContainer);
 					categoryHeaderMasked.SetHeader(StringNames.ImpostorsCategory, 20);
 					categoryHeaderMasked.Title.text = option.heading != null ? option.heading.GetString() : option.getTitle();
-					var color = categoryHeaderMasked.Title.text.Contains("<color=") ? Helpers.HexToColor(categoryHeaderMasked.Title.text.Substring(8, 6)) : Color.white;
-					categoryHeaderMasked.Title.outlineColor = color;
-					categoryHeaderMasked.Title.outlineWidth = 0.2f;
 					categoryHeaderMasked.transform.localScale = Vector3.one * 0.63f;
 					categoryHeaderMasked.transform.localPosition = new Vector3(-0.903f, num, -2f);
 					num -= 0.63f;
