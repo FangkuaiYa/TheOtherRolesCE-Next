@@ -1,6 +1,6 @@
 
 
-![eisbison banner](./Images/TOR_Logo.png)
+![eisbison banner](./Images/TOR_Logo.jpg)
 <p align="center"><a href="https://github.com/FangkuaiYa/TheOtherRolesCE-Next/releases/"><img src="https://badgen.net/github/release/fangkuaiya/theotherrolesce-next"></a></p>
 
 <p align="center">
