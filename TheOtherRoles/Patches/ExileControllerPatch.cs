@@ -11,7 +11,7 @@ using static TheOtherRoles.TheOtherRoles;
 
 namespace TheOtherRoles.Patches
 {
-	[HarmonyPatch(typeof(ExileController), nameof(ExileController.Begin))]
+	[HarmonyPatch(typeof(ExileController), nameof(ExileController.BeginForGameplay))]
 	[HarmonyPriority(Priority.First)]
 	class ExileControllerBeginPatch
 	{
@@ -153,7 +153,7 @@ namespace TheOtherRoles.Patches
 		{
 			public static void Postfix(ExileController __instance)
 			{
-				WrapUpPostfix(__instance.exiled);
+				WrapUpPostfix(__instance.initData.networkedPlayer);
 			}
 		}
 
@@ -162,7 +162,7 @@ namespace TheOtherRoles.Patches
 		{
 			public static void Postfix(AirshipExileController __instance)
 			{
-				WrapUpPostfix(__instance.exiled);
+				WrapUpPostfix(__instance.initData.networkedPlayer);
 			}
 		}
 
@@ -559,9 +559,9 @@ namespace TheOtherRoles.Patches
 		{
 			try
 			{
-				if (ExileController.Instance != null && ExileController.Instance.exiled != null)
+				if (ExileController.Instance != null && ExileController.Instance.initData.networkedPlayer != null)
 				{
-					PlayerControl player = Helpers.playerById(ExileController.Instance.exiled.Object.PlayerId);
+					PlayerControl player = Helpers.playerById(ExileController.Instance.initData.networkedPlayer.Object.PlayerId);
 					if (player == null) return;
 					// Exile role text
 					if (id == StringNames.ExileTextPN || id == StringNames.ExileTextSN || id == StringNames.ExileTextPP || id == StringNames.ExileTextSP)

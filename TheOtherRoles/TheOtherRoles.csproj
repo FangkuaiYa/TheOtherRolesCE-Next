@@ -16,7 +16,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="AmongUs.GameLibs.Steam" Version="2024.6.18" />
+		<PackageReference Include="AmongUs.GameLibs.Steam" Version="2024.10.29" />
 		<PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.697" />
         <PackageReference Include="BepInEx.IL2CPP.MSBuild" Version="2.1.0-rc.1">
           <PrivateAssets>all</PrivateAssets>
@@ -32,7 +32,7 @@
     </Target>
 
 	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-		<Exec Command="python &quot;$(SolutionDir)stringsToJson.py&quot;" />
+		<Exec Command="$(PythonBin) &quot;$(SolutionDir)stringsToJson.py&quot;" />
 	</Target>
 
 	<Target Name="CopyCustomContent" AfterTargets="AfterBuild" Condition="Exists('$(AmongUsLatest)/BepInEx/plugins/')">
