@@ -2,6 +2,8 @@ using AmongUs.GameOptions;
 using BepInEx.Unity.IL2CPP.Utils;
 using HarmonyLib;
 using Hazel;
+using Reactor.Utilities.Attributes;
+using Reactor.Utilities.Extensions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -11,6 +13,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using TheOtherRoles.CustomGameModes;
 using TheOtherRoles.Modules;
@@ -221,8 +225,17 @@ namespace TheOtherRoles
 		{
 			return !(player == null) && (player == Lovers.lover1 || player == Lovers.lover2);
 		}
+        public static string camelString(this string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
 
-		public static bool isSaboActive()
+            string firstLetter = input.Substring(0, 1).ToUpper();
+            string remainingLetters = input.Substring(1).ToLower();
+            return firstLetter + remainingLetters;
+        }
+
+        public static bool isSaboActive()
 		{
 			return (Helpers.getActiveSabo() != SabatageTypes.None);
 		}
@@ -463,41 +476,6 @@ namespace TheOtherRoles
 				System.Console.WriteLine("Error loading texture from disk: " + path);
 			}
 			return null;
-		}
-
-		public static AudioClip loadAudioClipFromResources(string path, string clipName = "UNNAMED_TOR_AUDIO_CLIP")
-		{
-			// must be "raw (headerless) 2-channel signed 32 bit pcm (le)" (can e.g. use Audacity?to export)
-			try
-			{
-				Assembly assembly = Assembly.GetExecutingAssembly();
-				Stream stream = assembly.GetManifestResourceStream(path);
-				var byteAudio = new byte[stream.Length];
-				_ = stream.Read(byteAudio, 0, (int)stream.Length);
-				float[] samples = new float[byteAudio.Length / 4]; // 4 bytes per sample
-				int offset;
-				for (int i = 0; i < samples.Length; i++)
-				{
-					offset = i * 4;
-					samples[i] = (float)BitConverter.ToInt32(byteAudio, offset) / Int32.MaxValue;
-				}
-				int channels = 2;
-				int sampleRate = 48000;
-				AudioClip audioClip = AudioClip.Create(clipName, samples.Length / 2, channels, sampleRate, false);
-				audioClip.hideFlags |= HideFlags.HideAndDontSave | HideFlags.DontSaveInEditor;
-				audioClip.SetData(samples, 0);
-				return audioClip;
-			}
-			catch
-			{
-				System.Console.WriteLine("Error loading AudioClip from resources: " + path);
-			}
-			return null;
-
-			/* Usage example:
-            AudioClip exampleClip = Helpers.loadAudioClipFromResources("TheOtherRoles.Resources.exampleClip.raw");
-            if (Constants.ShouldPlaySfx()) SoundManager.Instance.PlaySound(exampleClip, false, 0.8f);
-            */
 		}
 		public static string readTextFromResources(string path)
 		{
@@ -755,7 +733,7 @@ namespace TheOtherRoles
 			return GameOptionsManager.Instance.CurrentGameOptions.MapId == 5;
 		}
 
-		public static bool MushroomSabotageActive()
+        public static bool MushroomSabotageActive()
 		{
 			return CachedPlayer.LocalPlayer.PlayerControl.myTasks.ToArray().Any((x) => x.TaskType == TaskTypes.MushroomMixupSabotage);
 		}

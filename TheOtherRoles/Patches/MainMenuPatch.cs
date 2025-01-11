@@ -155,7 +155,7 @@ Goose-Goose-Duck - Idea for the Vulture role came from Slushiegoose
 ugackMiner53 - Idea and core code for the Prop Hunt game mode
 TheEpicRoles - Idea for the first kill shield (partly) and the tabbed option menu (fully + some code), by LaicosVK DasMonschta Nova
 TheOtherUs(Spex) - Some codes
-TheOtherRoles-GMIA(Imp11) - Some codes
+<b>TheOtherRoles-GMIA(Imp11) - Some codes (Space thank)</b>
 TheOtherUs-Edited(mxyx-club) - Some codes</size>";
 				creditsString += "</align>";
 				Assets.InnerNet.Announcement creditsAnnouncement = new()

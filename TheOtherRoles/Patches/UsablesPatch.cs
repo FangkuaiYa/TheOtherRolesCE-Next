@@ -1,6 +1,7 @@
 using AmongUs.GameOptions;
 using HarmonyLib;
 using Hazel;
+using Reactor.Utilities.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -95,9 +96,19 @@ namespace TheOtherRoles.Patches
 		}
 	}
 
+    [HarmonyPatch(typeof(ModManager), nameof(ModManager.LateUpdate))]
+    public static class ModStampPatch
+    {
+        public static void Postfix(ModManager __instance)
+        {
+            if (__instance.ModStamp.enabled)
+            {
+                __instance.ModStamp.transform.position = AspectPosition.ComputeWorldPosition(__instance.localCamera, AspectPosition.EdgeAlignments.LeftTop, new Vector3(0.6f, 0.6f, __instance.localCamera.nearClipPlane + 0.1f));
+            }
+        }
+    }
 
-
-	[HarmonyPatch(typeof(VentButton), nameof(VentButton.DoClick))]
+    [HarmonyPatch(typeof(VentButton), nameof(VentButton.DoClick))]
 	class VentButtonDoClickPatch
 	{
 		static bool Prefix(VentButton __instance)

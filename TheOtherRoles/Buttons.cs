@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TheOtherRoles.CustomGameModes;
+using TheOtherRoles.Modules;
 using TheOtherRoles.Objects;
 using TheOtherRoles.Patches;
 using TheOtherRoles.Players;
@@ -285,7 +286,8 @@ namespace TheOtherRoles
 			couldUse = couldUse ?? button.CouldUse;
 			CustomButton replacementHandcuffedButton = new CustomButton(() => { }, () => { return true; }, couldUse, () => { }, Deputy.getHandcuffedButtonSprite(), positionOffsetValue, button.hudManager, button.hotkey,
 				true, Deputy.handcuffDuration, () => { }, button.mirror);
-			replacementHandcuffedButton.Timer = replacementHandcuffedButton.EffectDuration;
+            ButtonEffect.SetMouseActionIcon(replacementHandcuffedButton.actionButtonGameObject, true, "Abilities not available while handcuffed", false);
+            replacementHandcuffedButton.Timer = replacementHandcuffedButton.EffectDuration;
 			replacementHandcuffedButton.actionButton.cooldownTimerText.color = new Color(0F, 0.8F, 0F);
 			replacementHandcuffedButton.isEffectActive = true;
 			if (deputyHandcuffedButtons.ContainsKey(CachedPlayer.LocalPlayer.PlayerId))
@@ -334,6 +336,7 @@ namespace TheOtherRoles
 				{
 					replacementButton.HasButton = () => { return false; };
 					replacementButton.Update(); // To make it disappear properly.
+                    ButtonEffect.SetMouseActionIcon(replacementButton.actionButtonGameObject, false); 
 					CustomButton.buttons.Remove(replacementButton);
 				}
 				deputyHandcuffedButtons.Remove(CachedPlayer.LocalPlayer.PlayerId);

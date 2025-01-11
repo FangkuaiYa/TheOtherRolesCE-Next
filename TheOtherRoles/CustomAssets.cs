@@ -5,7 +5,6 @@ namespace TheOtherRoles;
 public class CustomZip
 {
 	// AudioClip
-	public AudioClip lobbyMusic;
 	public AudioClip arsonistDouse;
 	public AudioClip bombDefused;
 	public AudioClip bombExplosion;

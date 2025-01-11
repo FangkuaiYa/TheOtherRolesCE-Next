@@ -4,6 +4,7 @@ using BepInEx.Configuration;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
 using Hazel;
+using Reactor.Utilities.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;

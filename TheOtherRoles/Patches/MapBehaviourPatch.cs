@@ -1,5 +1,6 @@
 ﻿using AmongUs.GameOptions;
 using HarmonyLib;
+using Reactor.Utilities.Extensions;
 using Rewired.Utils.Platforms.Windows;
 using System;
 using System.Collections.Generic;

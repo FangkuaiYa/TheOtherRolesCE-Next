@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TheOtherRoles.CustomGameModes;
+using TheOtherRoles.Modules;
 using TheOtherRoles.Objects;
 using TheOtherRoles.Players;
 using TheOtherRoles.Utilities;
@@ -317,6 +318,8 @@ namespace TheOtherRoles.Patches
 					RPCProcedure.setFirstKill(target.PlayerId);
 				}
 			}
+            HudManager.Instance.ShowVanillaKeyGuide();
+            
 			MapOptionsTor.firstKillName = "";
 
 			EventUtility.gameStartsUpdate();

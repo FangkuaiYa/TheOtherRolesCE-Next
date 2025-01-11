@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using Reactor.Utilities.Extensions;
 using TheOtherRoles.Patches;
 using TheOtherRoles.Utilities;
 using UnityEngine;

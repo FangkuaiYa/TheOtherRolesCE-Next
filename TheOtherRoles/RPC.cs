@@ -3,6 +3,7 @@ using AmongUs.GameOptions;
 using Assets.CoreScripts;
 using HarmonyLib;
 using Hazel;
+using Reactor.Utilities.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
