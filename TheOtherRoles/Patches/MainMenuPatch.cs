@@ -1,114 +1,139 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using AmongUs.Data;
+using Assets.InnerNet;
 using HarmonyLib;
-using UnityEngine;
-using UnityEngine.UI;
-using static UnityEngine.UI.Button;
-using Object = UnityEngine.Object;
+using System;
+using System.Collections.Generic;
 using TheOtherRoles.Patches;
+using TMPro;
+using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using static TheOtherRoles.Helpers;
+using Object = UnityEngine.Object;
 
-namespace TheOtherRoles.Modules {
-    
-    [HarmonyPatch(typeof(MainMenuManager), nameof(MainMenuManager.Start))]
-    public class MainMenuPatch {
-        private static bool horseButtonState = MapOptionsTor.enableHorseMode;
-        //private static Sprite horseModeOffSprite = null;
-        //private static Sprite horseModeOnSprite = null;
-        private static GameObject bottomTemplate;
-        private static AnnouncementPopUp popUp;
+namespace TheOtherRoles.Modules
+{
 
-        private static void Prefix(MainMenuManager __instance) {
-            CustomHatLoader.LaunchHatFetcher();
-            var template = GameObject.Find("ExitGameButton");
-            if (template == null) return;
+	[HarmonyPatch(typeof(MainMenuManager), nameof(MainMenuManager.Start))]
+	public class MainMenuPatch
+	{
+		private static bool horseButtonState = MapOptionsTor.enableHorseMode;
+		private static AnnouncementPopUp popUp;
+		private static GameObject CreditsButton;
+		private static GameObject DiscordButton;
+		public static MainMenuManager Instance { get; private set; }
 
-            var buttonDiscord = UnityEngine.Object.Instantiate(template, null);
-            buttonDiscord.transform.localPosition = new Vector3(buttonDiscord.transform.localPosition.x, buttonDiscord.transform.localPosition.y + 0.6f, buttonDiscord.transform.localPosition.z);
+		public static void addSceneChangeCallbacks()
+		{
+			SceneManager.add_sceneLoaded((Action<Scene, LoadSceneMode>)((scene, _) =>
+			{
+				if (!scene.name.Equals("MatchMaking", StringComparison.Ordinal)) return;
+				MapOptionsTor.gameMode = CustomGamemodes.Classic;
+				// Add buttons For Guesser Mode, Hide N Seek in this scene.
+				// find "HostLocalGameButton"
+				var template = GameObject.FindObjectOfType<HostLocalGameButton>();
+				var gameButton = template.transform.FindChild("CreateGameButton");
+				var gameButtonPassiveButton = gameButton.GetComponentInChildren<PassiveButton>();
 
-            var textDiscord = buttonDiscord.transform.GetChild(0).GetComponent<TMPro.TMP_Text>();
-            __instance.StartCoroutine(Effects.Lerp(0.1f, new System.Action<float>((p) => {
-                textDiscord.SetText("Discord");
-            })));
+				var guesserButton = GameObject.Instantiate<Transform>(gameButton, gameButton.parent);
+				guesserButton.transform.localPosition += new Vector3(0f, -0.5f);
+				var guesserButtonText = guesserButton.GetComponentInChildren<TMPro.TextMeshPro>();
+				var guesserButtonPassiveButton = guesserButton.GetComponentInChildren<PassiveButton>();
 
-            PassiveButton passiveButtonDiscord = buttonDiscord.GetComponent<PassiveButton>();
-            SpriteRenderer buttonSpriteDiscord = buttonDiscord.GetComponent<SpriteRenderer>();
+				guesserButtonPassiveButton.OnClick = new Button.ButtonClickedEvent();
+				guesserButtonPassiveButton.OnClick.AddListener((System.Action)(() =>
+				{
+					MapOptionsTor.gameMode = CustomGamemodes.Guesser;
+					template.OnClick();
+				}));
 
-            passiveButtonDiscord.OnClick = new Button.ButtonClickedEvent();
-            passiveButtonDiscord.OnClick.AddListener((System.Action)(() => Application.OpenURL("https://discord.gg/77RkMJHWsM")));
+				var HideNSeekButton = GameObject.Instantiate<Transform>(gameButton, gameButton.parent);
+				HideNSeekButton.transform.localPosition += new Vector3(1.7f, -0.5f);
+				var HideNSeekButtonText = HideNSeekButton.GetComponentInChildren<TMPro.TextMeshPro>();
+				var HideNSeekButtonPassiveButton = HideNSeekButton.GetComponentInChildren<PassiveButton>();
 
-            Color discordColor = new Color32(88, 101, 242, byte.MaxValue);
-            buttonSpriteDiscord.color = textDiscord.color = discordColor;
-            passiveButtonDiscord.OnMouseOut.AddListener((System.Action)delegate {
-                buttonSpriteDiscord.color = textDiscord.color = discordColor;
-            });
+				HideNSeekButtonPassiveButton.OnClick = new Button.ButtonClickedEvent();
+				HideNSeekButtonPassiveButton.OnClick.AddListener((System.Action)(() =>
+				{
+					MapOptionsTor.gameMode = CustomGamemodes.HideNSeek;
+					template.OnClick();
+				}));
+				var PropHuntButton = GameObject.Instantiate<Transform>(gameButton, gameButton.parent);
+				PropHuntButton.transform.localPosition += new Vector3(3.4f, -0.5f);
+				var PropHuntButtonText = PropHuntButton.GetComponentInChildren<TMPro.TextMeshPro>();
+				var PropHuntButtonPassiveButton = PropHuntButton.GetComponentInChildren<PassiveButton>();
+				PropHuntButtonPassiveButton.OnClick = new Button.ButtonClickedEvent();
+				PropHuntButtonPassiveButton.OnClick.AddListener((System.Action)(() =>
+				{
+					MapOptionsTor.gameMode = CustomGamemodes.PropHunt;
+					template.OnClick();
+				}));
+				template.StartCoroutine(Effects.Lerp(0.1f, new System.Action<float>((p) =>
+				{
+					guesserButtonText.SetText(ModTranslation.GetString("CreateGameModeText", 1));
+					HideNSeekButtonText.SetText(ModTranslation.GetString("CreateGameModeText", 2));
+					PropHuntButtonText.SetText(ModTranslation.GetString("CreateGameModeText", 3));
+				})));
+			}));
+		}
+		[HarmonyPatch(typeof(MainMenuManager), nameof(MainMenuManager.Start)), HarmonyPostfix]
+		public static void Start_Postfix(MainMenuManager __instance)
+		{
+			Instance = __instance;
 
+			SimpleButton.SetBase(__instance.quitButton);
 
-            bottomTemplate = GameObject.Find("InventoryButton");
-            /*
-            // Horse mode stuff
-            var horseModeSelectionBehavior = new ClientOptionsPatch.SelectionBehaviour("Enable Horse Mode", () => MapOptionsTor.enableHorseMode = TheOtherRolesPlugin.EnableHorseMode.Value = !TheOtherRolesPlugin.EnableHorseMode.Value, TheOtherRolesPlugin.EnableHorseMode.Value);
+			int row = 1; int col = 0;
+			GameObject CreatButton(string text, Action action)
+			{
+				col++; if (col > 2) { col = 1; row++; }
+				var template = col == 1 ? __instance.creditsButton.gameObject : __instance.quitButton.gameObject;
+				var button = Object.Instantiate(template, template.transform.parent);
+				button.transform.transform.FindChild("FontPlacer").GetChild(0).gameObject.DestroyTranslator();
+				var buttonText = button.transform.FindChild("FontPlacer").GetChild(0).GetComponent<TextMeshPro>();
+				buttonText.text = text;
+				PassiveButton passiveButton = button.GetComponent<PassiveButton>();
+				passiveButton.OnClick = new();
+				passiveButton.OnClick.AddListener(action);
+				AspectPosition aspectPosition = button.GetComponent<AspectPosition>();
+				aspectPosition.anchorPoint = new Vector2(col == 1 ? 0.415f : 0.583f, 0.5f - 0.08f * row);
+				return button;
+			}
+			if (CreditsButton == null) CreditsButton = CreatButton("Credits", null);
+			CreditsButton.gameObject.SetActive(true);
+			CreditsButton.name = "Credits Button";
+			PassiveButton passiveButtoncredits = CreditsButton.GetComponent<PassiveButton>();
+			SpriteRenderer buttonSpritecredits = CreditsButton.transform.FindChild("Inactive").GetComponent<SpriteRenderer>();
 
-            
-            if (bottomTemplate == null) return;
-            var horseButton = Object.Instantiate(bottomTemplate, bottomTemplate.transform.parent);
-            var passiveHorseButton = horseButton.GetComponent<PassiveButton>();
-            var spriteHorseButton = horseButton.GetComponent<SpriteRenderer>();
+			passiveButtoncredits.OnClick = new Button.ButtonClickedEvent();
+			Color creditsColor = new Color(0, 1, 1, 0.8f);
+			buttonSpritecredits.color = creditsColor;
+			passiveButtoncredits.OnMouseOut.AddListener((System.Action)delegate
+			{
+				buttonSpritecredits.color = creditsColor;
+			});
+			//if (CreditsButton == null) CreditsButton = CreatButton("Credits", delegate
+			passiveButtoncredits.OnClick.AddListener((System.Action)delegate
+			{
+				// do stuff
+				if (popUp != null) Object.Destroy(popUp);
+				var popUpTemplate = Object.FindObjectOfType<AnnouncementPopUp>(true);
+				popUp = Object.Instantiate(popUpTemplate);
 
-            horseModeOffSprite = Helpers.loadSpriteFromResources("TheOtherRoles.Resources.HorseModeButtonOff.png", 75f);
-            horseModeOnSprite = Helpers.loadSpriteFromResources("TheOtherRoles.Resources.HorseModeButtonOn.png", 75f);
+				popUp.gameObject.SetActive(true);
+				string creditsString = @$"<align=""center"">Contributors:
+鸡分  乱码 Slok7565  Spex
 
-            spriteHorseButton.sprite = horseButtonState ? horseModeOnSprite : horseModeOffSprite;
-
-            passiveHorseButton.OnClick = new ButtonClickedEvent();
-
-            passiveHorseButton.OnClick.AddListener((System.Action)delegate {
-                horseButtonState = horseModeSelectionBehavior.OnClick();
-                if (horseButtonState) {
-                    if (horseModeOnSprite == null) horseModeOnSprite = Helpers.loadSpriteFromResources("TheOtherRoles.Resources.HorseModeButtonOn.png", 75f);
-                    spriteHorseButton.sprite = horseModeOnSprite;
-                } else {
-                    if (horseModeOffSprite == null) horseModeOffSprite = Helpers.loadSpriteFromResources("TheOtherRoles.Resources.HorseModeButtonOff.png", 75f);
-                    spriteHorseButton.sprite = horseModeOffSprite;
-                }
-                CredentialsPatch.LogoPatch.updateSprite();
-                // Avoid wrong Player Particles floating around in the background
-                var particles = GameObject.FindObjectOfType<PlayerParticles>();
-                if (particles != null) {
-                    particles.pool.ReclaimAll();
-                    particles.Start();
-                }
-            });*/
-
-            // TOR credits button
-            if (bottomTemplate == null) return;
-            var creditsButton = Object.Instantiate(bottomTemplate, bottomTemplate.transform.parent);
-            var passiveCreditsButton = creditsButton.GetComponent<PassiveButton>();
-            var spriteCreditsButton = creditsButton.GetComponent<SpriteRenderer>();
-
-            spriteCreditsButton.sprite = Helpers.loadSpriteFromResources("TheOtherRoles.Resources.CreditsButton.png", 75f);
-
-            passiveCreditsButton.OnClick = new ButtonClickedEvent();
-
-            passiveCreditsButton.OnClick.AddListener((System.Action)delegate {
-                // do stuff
-                if (popUp != null) Object.Destroy(popUp);
-                popUp = Object.Instantiate(Object.FindObjectOfType<AnnouncementPopUp>(true));
-                popUp.gameObject.SetActive(true);
-                popUp.Init();
-                //SelectableHyperLinkHelper.DestroyGOs(popUp.selectableHyperLinks, "test");
-                string creditsString = @$"<align=""center"">Github Contributors:
-Alex2911    amsyarasyiq    MaximeGillot
-Psynomit    probablyadnf    JustASysAdmin
-
-Discord Moderators:
+[https://discord.gg/AFWJVn87Bd]Discord[] Moderators:
 Streamblox    Draco Cordraconis
 Thanks to all our discord helpers!
 
 Thanks to miniduikboot & GD for hosting modded servers
 
+<b>Special thanks TheOtherRolesGMIA(By Imp11)</b>
+
 ";
-                creditsString += $@"<size=60%> Other Credits & Resources:
+				creditsString += $@"<size=60%> Other Credits & Resources:
 OxygenFilter - For the versions v2.3.0 to v2.6.1, we were using the OxygenFilter for automatic deobfuscation
 Reactor - The framework used for all versions before v2.0.0, and again since 4.2.0
 BepInEx - Used to hook game functions
@@ -123,86 +148,263 @@ ExtraRolesAmongUs - Idea for the Engineer and Medic role came from NotHunter101.
 Among-Us-Sheriff-Mod - Idea for the Sheriff role came from Woodi-dev
 TooManyRolesMods - Idea for the Detective and Time Master roles comes from Hardel-DW. Also some code snippets from their implementation were used.
 TownOfUs - Idea for the Swapper, Shifter, Arsonist and a similar Mayor role came from Slushiegoose
+TownOfUs-R - Idea for the Veteran, Disperser, Doomsayer... lots of role came from eDonnes124
 Ottomated - Idea for the Morphling, Snitch and Camouflager role came from Ottomated
 Crowded-Mod - Our implementation for 10+ player lobbies was inspired by the one from the Crowded Mod Team
-Goose-Goose-Duck - Idea for the Vulture role came from Slushiegoose</size>";
-                creditsString += "</align>";
-                popUp.AnnounceTextMeshPro.text = creditsString;
-                __instance.StartCoroutine(Effects.Lerp(0.01f, new Action<float>((p) => {
-                    if (p == 1) {
-                        var titleText = GameObject.Find("Title_Text").GetComponent<TMPro.TextMeshPro>();
-                        if (titleText != null) titleText.text = "Credits and Contributors";
-                    }
-                })));
-            });
-            
-        }
+Goose-Goose-Duck - Idea for the Vulture role came from Slushiegoose
+ugackMiner53 - Idea and core code for the Prop Hunt game mode
+TheEpicRoles - Idea for the first kill shield (partly) and the tabbed option menu (fully + some code), by LaicosVK DasMonschta Nova
+TheOtherUs(Spex) - Some codes
+TheOtherRoles-GMIA(Imp11) - Some codes
+TheOtherUs-Edited(mxyx-club) - Some codes</size>";
+				creditsString += "</align>";
+				Assets.InnerNet.Announcement creditsAnnouncement = new()
+				{
+					Id = "torCredits",
+					Language = 0,
+					Number = 500,
+					Title = "Credits and Contributors",
+					ShortTitle = "TOR CE Credits",
+					SubTitle = "",
+					PinState = false,
+					Date = "07.29.2024",
+					Text = creditsString,
+				};
+				__instance.StartCoroutine(Effects.Lerp(0.1f, new Action<float>((p) =>
+				{
+					if (p == 1)
+					{
+						var backup = DataManager.Player.Announcements.allAnnouncements;
+						DataManager.Player.Announcements.allAnnouncements = new();
+						popUp.Init(false);
+						DataManager.Player.Announcements.SetAnnouncements(new Announcement[] { creditsAnnouncement });
+						popUp.CreateAnnouncementList();
+						popUp.UpdateAnnouncementText(creditsAnnouncement.Number);
+						popUp.visibleAnnouncements._items[0].PassiveButton.OnClick.RemoveAllListeners();
+						DataManager.Player.Announcements.allAnnouncements = backup;
+					}
+				})));
+			});
 
-        public static void Postfix(MainMenuManager __instance) {
-            __instance.StartCoroutine(Effects.Lerp(0.01f, new Action<float>((p) => {
-                if (p == 1) {
-                    bottomTemplate = GameObject.Find("InventoryButton");
-                    foreach (Transform tf in bottomTemplate.transform.parent.GetComponentsInChildren<Transform>()) {
-                        tf.localPosition = new Vector2(tf.localPosition.x * 0.8f, tf.localPosition.y);
-                    }
-                }
-            })));
 
-        }
+			if (DiscordButton == null) DiscordButton = CreatButton("Discord", () => Application.OpenURL("https://discord.gg/AFWJVn87Bd"));
+			DiscordButton.gameObject.SetActive(true);
+			DiscordButton.name = "TORCE Discord";
+			PassiveButton passiveDiscordButton = DiscordButton.GetComponent<PassiveButton>();
+			SpriteRenderer SpriteDiscordButton = DiscordButton.transform.FindChild("Inactive").GetComponent<SpriteRenderer>();
+			Color DiscordColor = new Color(0.317f, 0, 1, 0.8f);
+			SpriteDiscordButton.color = DiscordColor;
+			passiveDiscordButton.OnMouseOut.AddListener((System.Action)delegate
+			{
+				SpriteDiscordButton.color = DiscordColor;
+			});
+		}
+	}
+	[HarmonyPatch(typeof(VersionShower), nameof(VersionShower.Start))]
+	internal class VersionShowerStartPatch
+	{
+		private static GameObject VersionShower1;
+		public static GameObject OVersionShower;
+		private static TextMeshPro VisitText;
+		private static void Postfix(VersionShower __instance)
+		{
+			string credentialsText = "<color=#00ffff>FANGKUAI</color> © 2024";
+			credentialsText += "\t\t\t";
+			string versionText = $"<color=#ff351f>TORCE</color> - {TheOtherRolesPlugin.Version.ToString() + (TheOtherRolesPlugin.betaDays > 0 ? "-BETA" : "")}";
+			credentialsText += versionText;
+			var friendCode = GameObject.Find("FriendCode");
+			if (friendCode != null && VersionShower1 == null)
+			{
+				VersionShower1 = Object.Instantiate(friendCode, friendCode.transform.parent);
+				VersionShower1.name = "TORCE Version Shower";
+				VersionShower1.transform.localPosition = friendCode.transform.localPosition + new Vector3(3.2f, 0f, 0f);
+				VersionShower1.transform.localScale *= 1.7f;
+				var TMP = VersionShower1.GetComponent<TextMeshPro>();
+				TMP.alignment = TextAlignmentOptions.Right;
+				TMP.fontSize = 30f;
+				TMP.SetText(credentialsText);
+			}
+			if ((OVersionShower = GameObject.Find("VersionShower")) != null && VisitText == null)
+			{
+				VisitText = UnityEngine.Object.Instantiate(__instance.text);
+				VisitText.name = "TORCE User Counter";
+				VisitText.alignment = TextAlignmentOptions.Left;
+				VisitText.transform.localScale = new Vector3(0.7f, 0.7f, 0.7f);
+				VisitText.transform.localPosition = new Vector3(-3.92f, -2.9f, 0f);
+				VisitText.enabled = GameObject.Find("TOR Background") != null;
 
-        public static void addSceneChangeCallbacks() {
-            SceneManager.add_sceneLoaded((Action<Scene, LoadSceneMode>)((scene, _) => {
-                if (!scene.name.Equals("MatchMaking", StringComparison.Ordinal)) return;
-                MapOptionsTor.gameMode = CustomGamemodes.Classic;
-                // Add buttons For Guesser Mode, Hide N Seek in this scene.
-                // find "HostLocalGameButton"
-                var template = GameObject.FindObjectOfType<HostLocalGameButton>();
-                var gameButton = template.transform.FindChild("CreateGameButton");
-                var gameButtonPassiveButton = gameButton.GetComponentInChildren<PassiveButton>();
+				__instance.text.text = $"<color=#ff351f>TheOtherRoles Community Edition</color> v{TheOtherRolesPlugin.Version.ToString() + (TheOtherRolesPlugin.betaDays > 0 ? "-BETA" : "")}";
+				__instance.text.alignment = TextAlignmentOptions.Left;
+				OVersionShower.transform.localPosition = new Vector3(-4.92f, -3.3f, 0f);
 
-                var guesserButton = GameObject.Instantiate<Transform>(gameButton, gameButton.parent);
-                guesserButton.transform.localPosition += new Vector3(0f, -0.5f);
-                var guesserButtonText = guesserButton.GetComponentInChildren<TMPro.TextMeshPro>();
-                var guesserButtonPassiveButton = guesserButton.GetComponentInChildren<PassiveButton>();
-                
-                guesserButtonPassiveButton.OnClick = new Button.ButtonClickedEvent();
-                guesserButtonPassiveButton.OnClick.AddListener((System.Action)(() => {
-                    MapOptionsTor.gameMode = CustomGamemodes.Guesser;
-                    template.OnClick();
-                }));
+				var ap1 = OVersionShower.GetComponent<AspectPosition>();
+				if (ap1 != null) UnityEngine.Object.Destroy(ap1);
+				var ap2 = VisitText.GetComponent<AspectPosition>();
+				if (ap2 != null) UnityEngine.Object.Destroy(ap2);
+			};
+		}
+	}
 
-                var HideNSeekButton = GameObject.Instantiate<Transform>(gameButton, gameButton.parent);
-                HideNSeekButton.transform.localPosition += new Vector3(1.7f, -0.5f);
-                var HideNSeekButtonText = HideNSeekButton.GetComponentInChildren<TMPro.TextMeshPro>();
-                var HideNSeekButtonPassiveButton = HideNSeekButton.GetComponentInChildren<PassiveButton>();
-                
-                HideNSeekButtonPassiveButton.OnClick = new Button.ButtonClickedEvent();
-                HideNSeekButtonPassiveButton.OnClick.AddListener((System.Action)(() => {
-                    MapOptionsTor.gameMode = CustomGamemodes.HideNSeek;
-                    template.OnClick();
-                }));
+	[HarmonyPatch(typeof(MainMenuManager), nameof(MainMenuManager.Start)), HarmonyPriority(Priority.First)]
+	internal class TitleLogoPatch
+	{
+		public static GameObject TOR_Background;
+		public static GameObject Ambience;
+		public static GameObject Starfield;
+		public static GameObject LeftPanel;
+		public static GameObject RightPanel;
+		public static GameObject CloseRightButton;
+		public static GameObject Tint;
+		public static GameObject Sizer;
+		public static GameObject AULogo;
+		public static GameObject BottomButtonBounds;
 
-                template.StartCoroutine(Effects.Lerp(0.1f, new System.Action<float>((p) => {
-                    guesserButtonText.SetText("TOR Guesser");
-                    HideNSeekButtonText.SetText("TOR Hide N Seek");
-                 })));
-            }));
-        }
-    }
+		public static Vector3 RightPanelOp;
 
-    [HarmonyPatch(typeof(AnnouncementPopUp), nameof(AnnouncementPopUp.UpdateAnnounceText))]
-    public static class Announcement
-    {
-        public static ModUpdateBehaviour.UpdateData updateData = null;
-        public static bool Prefix(AnnouncementPopUp __instance)
-        {
-            if (ModUpdateBehaviour.showPopUp || updateData == null) return true;
+		private static void Postfix(MainMenuManager __instance)
+		{
+			GameObject.Find("BackgroundTexture")?.SetActive(false);
 
-            var text = __instance.AnnounceTextMeshPro;            
-            text.text = $"<size=150%><color=#FC0303>THE OTHER ROLES </color> {(updateData.Tag)}\n{(updateData.Content)}";
+			TOR_Background = new GameObject("TOR Background");
+			TOR_Background.transform.position = new Vector3(0, 0, 520f);
+			var bgRenderer = TOR_Background.AddComponent<SpriteRenderer>();
+			bgRenderer.sprite = Helpers.loadSpriteFromResources("TheOtherRoles.Resources.MainMenu.TOR_BG.jpg", 179f);
 
-            return false;
-        }
-    }
+			if (!(Ambience = GameObject.Find("Ambience"))) return;
+			if (!(Starfield = Ambience.transform.FindChild("starfield").gameObject)) return;
+			StarGen starGen = Starfield.GetComponent<StarGen>();
+			starGen.SetDirection(new Vector2(0, -2));
+			Starfield.transform.SetParent(TOR_Background.transform);
+			UnityEngine.Object.Destroy(Ambience);
 
+			if (!(LeftPanel = GameObject.Find("LeftPanel"))) return;
+			LeftPanel.transform.localScale = new Vector3(0.7f, 0.7f, 0.7f);
+			static void ResetParent(GameObject obj) => obj.transform.SetParent(LeftPanel.transform.parent);
+			LeftPanel.ForEachChild((Il2CppSystem.Action<GameObject>)ResetParent);
+			LeftPanel.SetActive(false);
+
+			Color shade = new(0f, 0f, 0f, 0f);
+			var standardActiveSprite = __instance.newsButton.activeSprites.GetComponent<SpriteRenderer>().sprite;
+			var minorActiveSprite = __instance.quitButton.activeSprites.GetComponent<SpriteRenderer>().sprite;
+			Dictionary<List<PassiveButton>, (Sprite, Color, Color, Color, Color)> mainButtons = new()
+			{
+				{new List<PassiveButton>() {__instance.playButton, __instance.inventoryButton, __instance.shopButton},
+					(standardActiveSprite, new(0.57f, 0.99f, 1f, 0.8f), shade, Color.white, Color.white) },
+				{new List<PassiveButton>() {__instance.newsButton, __instance.myAccountButton, __instance.settingsButton},
+					(minorActiveSprite, new(0.09f, 0.917f, 0.67f, 0.8f), shade, Color.white, Color.white) },
+				{new List<PassiveButton>() {__instance.creditsButton, __instance.quitButton},
+					(minorActiveSprite, new(0.098f, 0.917f, 0.427f, 0.8f), shade, Color.white, Color.white) },
+			};
+			try
+			{
+				mainButtons.Keys.Flatten().DoIf(x => x != null, x => x.buttonText.color = Color.white);
+			}
+			catch { }
+
+			void FormatButtonColor(PassiveButton button, Sprite borderType, Color inActiveColor, Color activeColor, Color inActiveTextColor, Color activeTextColor)
+			{
+				button.activeSprites.transform.FindChild("Shine")?.gameObject?.SetActive(false);
+				button.inactiveSprites.transform.FindChild("Shine")?.gameObject?.SetActive(false);
+				var activeRenderer = button.activeSprites.GetComponent<SpriteRenderer>();
+				var inActiveRenderer = button.inactiveSprites.GetComponent<SpriteRenderer>();
+				activeRenderer.sprite = minorActiveSprite;
+				inActiveRenderer.sprite = minorActiveSprite;
+				activeRenderer.color = activeColor.a == 0f ? new Color(inActiveColor.r, inActiveColor.g, inActiveColor.b, 1f) : activeColor;
+				inActiveRenderer.color = inActiveColor;
+				button.activeTextColor = activeTextColor;
+				button.inactiveTextColor = inActiveTextColor;
+			}
+
+			foreach (var kvp in mainButtons)
+				kvp.Key.Do(button => FormatButtonColor(button, kvp.Value.Item1, kvp.Value.Item2, kvp.Value.Item3, kvp.Value.Item4, kvp.Value.Item5));
+
+			GameObject.Find("Divider")?.SetActive(false);
+
+			if (!(RightPanel = GameObject.Find("RightPanel"))) return;
+			var rpap = RightPanel.GetComponent<AspectPosition>();
+			if (rpap) UnityEngine.Object.Destroy(rpap);
+			RightPanelOp = RightPanel.transform.localPosition;
+			RightPanel.transform.localPosition = RightPanelOp + new Vector3(10f, 0f, 0f);
+			RightPanel.GetComponent<SpriteRenderer>().color = new(0.498f, 1f, 0.831f, 1f);
+
+			CloseRightButton = new GameObject("CloseRightPanelButton");
+			CloseRightButton.transform.SetParent(RightPanel.transform);
+			CloseRightButton.transform.localPosition = new Vector3(-4.78f, 1.3f, 1f);
+			CloseRightButton.transform.localScale = new(1f, 1f, 1f);
+			CloseRightButton.AddComponent<BoxCollider2D>().size = new(0.6f, 1.5f);
+			var closeRightSpriteRenderer = CloseRightButton.AddComponent<SpriteRenderer>();
+			closeRightSpriteRenderer.sprite = CustomMain.customZips.RightPanelCloseButton;
+			closeRightSpriteRenderer.color = new(0.498f, 1f, 0.831f, 1f);
+			var closeRightPassiveButton = CloseRightButton.AddComponent<PassiveButton>();
+			closeRightPassiveButton.OnClick = new();
+			closeRightPassiveButton.OnClick.AddListener((System.Action)MainMenuManagerPatch.HideRightPanel);
+			closeRightPassiveButton.OnMouseOut = new();
+			closeRightPassiveButton.OnMouseOut.AddListener((System.Action)(() => closeRightSpriteRenderer.color = new(0.498f, 1f, 0.831f, 1f)));
+			closeRightPassiveButton.OnMouseOver = new();
+			closeRightPassiveButton.OnMouseOver.AddListener((System.Action)(() => closeRightSpriteRenderer.color = new(0.462f, 0.933f, 0.776f, 1f)));
+
+			Tint = __instance.screenTint.gameObject;
+			var ttap = Tint.GetComponent<AspectPosition>();
+			if (ttap) UnityEngine.Object.Destroy(ttap);
+			Tint.transform.SetParent(RightPanel.transform);
+			Tint.transform.localPosition = new Vector3(-0.0824f, 0.0513f, Tint.transform.localPosition.z);
+			Tint.transform.localScale = new Vector3(1f, 1f, 1f);
+			__instance.howToPlayButton.gameObject.SetActive(true);
+			__instance.howToPlayButton.transform.parent.Find("FreePlayButton").gameObject.SetActive(true);
+
+			var creditsScreen = __instance.creditsScreen;
+			if (creditsScreen)
+			{
+				var csto = creditsScreen.GetComponent<TransitionOpen>();
+				if (csto) UnityEngine.Object.Destroy(csto);
+				var closeButton = creditsScreen.transform.FindChild("CloseButton");
+				closeButton?.gameObject.SetActive(false);
+			}
+
+			if (!(Sizer = GameObject.Find("Sizer"))) return;
+			if (!(AULogo = GameObject.Find("LOGO-AU"))) return;
+			Sizer.transform.localPosition += new Vector3(0f, 0.12f, 0f);
+			AULogo.transform.localScale = new Vector3(0.66f, 0.67f, 1f);
+			AULogo.transform.position += new Vector3(0f, 0.1f, 0f);
+			var logoRenderer = AULogo.GetComponent<SpriteRenderer>();
+			logoRenderer.sprite = CustomMain.customZips.TOR_Logo;
+
+			if (!(BottomButtonBounds = GameObject.Find("BottomButtonBounds"))) return;
+			BottomButtonBounds.transform.localPosition -= new Vector3(0f, 0.1f, 0f);
+		}
+	}
+	[HarmonyPatch(typeof(ModManager), nameof(ModManager.LateUpdate))]
+	internal class ModManagerLateUpdatePatch
+	{
+		public static void Prefix(ModManager __instance)
+		{
+			__instance.ShowModStamp();
+		}
+	}
+	[HarmonyPatch(typeof(CreditsScreenPopUp))]
+	internal class CreditsScreenPopUpPatch
+	{
+		[HarmonyPatch(nameof(CreditsScreenPopUp.OnEnable))]
+		public static void Postfix(CreditsScreenPopUp __instance)
+		{
+			__instance.BackButton.transform.parent.FindChild("Background").gameObject.SetActive(false);
+		}
+	}
+
+	[HarmonyPatch(typeof(SplashManager), nameof(SplashManager.Start))]
+	public class SplashManagerPatch
+	{
+		public static TextMeshPro loadText = null!;
+		public static bool Prefix(SplashManager __instance)
+		{
+			loadText = GameObject.Instantiate(__instance.errorPopup.InfoText, __instance.logoAnimFinish.transform.FindChild("LogoRoot").FindChild("ISLogo"));
+			loadText.transform.localPosition = new(0, __instance.logoAnimFinish.transform.FindChild("LogoRoot").FindChild("ISLogo").position.y - 1.18f, 0);
+			loadText.fontStyle = TMPro.FontStyles.Bold;
+			loadText.text = "\n\nWelcome to TheOtherRoles Community Edition";
+			//loadText.color = Color.white.AlphaMultiplied(0.3f);
+			loadText.color = Color.cyan;
+			loadText.SetActive(__instance.logoAnimFinish.enabled);
+			return true;
+		}
+	}
 }

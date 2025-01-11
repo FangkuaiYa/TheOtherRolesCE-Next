@@ -1,33 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <Version>5.8.1</Version>
+        <Version>5.9.0</Version>
         <Description>TheOtherRolesCE</Description>
-        <Authors>JustASysAdmin</Authors>
+        <Authors>FangKuai</Authors>
 		<LangVersion>latest</LangVersion>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-        <PlatformTarget>x86</PlatformTarget>
+        <PlatformTarget>AnyCPU</PlatformTarget>
     </PropertyGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="Resources\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Remove="Resources\TabIconClassicMode.png" />
-      <None Remove="Resources\TabIconGuesserMode.png" />
-      <None Remove="Resources\TabIconGuesserSettings.png" />
-      <None Remove="Resources\TabIconHideNSeekMode.png" />
-      <None Remove="Resources\TabIconHideNSeekRoles.png" />
-      <None Remove="Resources\TabIconHideNSeekSettings.png" />
-    </ItemGroup>
+		<EmbeddedResource Include="Resources\**" />
+		<EmbeddedResource Include="IntroAnimation\**" />
+	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="AmongUs.GameLibs.Steam" Version="2022.12.8" />
-        <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.664" />
-        <PackageReference Include="BepInEx.IL2CPP.MSBuild" Version="2.0.1" />
-        <PackageReference Include="Reactor" Version="2.1.0" />
+		<PackageReference Include="AmongUs.GameLibs.Steam" Version="2024.6.18" />
+		<PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.697" />
+        <PackageReference Include="BepInEx.IL2CPP.MSBuild" Version="2.1.0-rc.1">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>	
 
     <Target Name="Date" BeforeTargets="BeforeBuild">  <!--Will make the compile time available s.t. we can let betas expire-->
@@ -37,7 +31,11 @@
     </ItemGroup>
     </Target>
 
-    <Target Name="CopyCustomContent" AfterTargets="AfterBuild" Condition="Exists('$(AmongUsLatest)/BepInEx/plugins/')">
+	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+		<Exec Command="python &quot;$(SolutionDir)stringsToJson.py&quot;" />
+	</Target>
+
+	<Target Name="CopyCustomContent" AfterTargets="AfterBuild" Condition="Exists('$(AmongUsLatest)/BepInEx/plugins/')">
         <Message Text="Second occurrence" />
         <Copy SourceFiles="$(ProjectDir)\bin\$(Configuration)\net6.0\TheOtherRoles.dll" DestinationFolder="$(AmongUsLatest)/BepInEx/plugins/" />
     </Target>

@@ -1,256 +1,341 @@
 using HarmonyLib;
 using Hazel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using static TheOtherRoles.TheOtherRoles;
 using TheOtherRoles.Objects;
-using System;
 using TheOtherRoles.Players;
 using TheOtherRoles.Utilities;
 using UnityEngine;
+using static TheOtherRoles.TheOtherRoles;
 
-namespace TheOtherRoles.Patches {
-    [HarmonyPatch(typeof(ExileController), nameof(ExileController.Begin))]
-    [HarmonyPriority(Priority.First)]
-    class ExileControllerBeginPatch {
-        public static GameData.PlayerInfo lastExiled;
-        public static void Prefix(ExileController __instance, [HarmonyArgument(0)]ref GameData.PlayerInfo exiled, [HarmonyArgument(1)]bool tie) {
+namespace TheOtherRoles.Patches
+{
+	[HarmonyPatch(typeof(ExileController), nameof(ExileController.Begin))]
+	[HarmonyPriority(Priority.First)]
+	class ExileControllerBeginPatch
+	{
+		public static NetworkedPlayerInfo lastExiled;
+        public static void Prefix(ExileController __instance, [HarmonyArgument(0)] ref NetworkedPlayerInfo exiled, [HarmonyArgument(1)] bool tie)
+        {
             lastExiled = exiled;
 
-            // Medic shield
-            if (Medic.medic != null && AmongUsClient.Instance.AmHost && Medic.futureShielded != null && !Medic.medic.Data.IsDead) { // We need to send the RPC from the host here, to make sure that the order of shifting and setting the shield is correct(for that reason the futureShifted and futureShielded are being synced)
-                MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(CachedPlayer.LocalPlayer.PlayerControl.NetId, (byte)CustomRPC.MedicSetShielded, Hazel.SendOption.Reliable, -1);
-                writer.Write(Medic.futureShielded.PlayerId);
-                AmongUsClient.Instance.FinishRpcImmediately(writer);
-                RPCProcedure.medicSetShielded(Medic.futureShielded.PlayerId);
-            }
-            if (Medic.usedShield) Medic.meetingAfterShielding = true;  // Has to be after the setting of the shield
+			// Medic shield
+			if (Medic.medic != null && AmongUsClient.Instance.AmHost && Medic.futureShielded != null && !Medic.medic.Data.IsDead)
+			{ // We need to send the RPC from the host here, to make sure that the order of shifting and setting the shield is correct(for that reason the futureShifted and futureShielded are being synced)
+				MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(CachedPlayer.LocalPlayer.PlayerControl.NetId, (byte)CustomRPC.MedicSetShielded, Hazel.SendOption.Reliable, -1);
+				writer.Write(Medic.futureShielded.PlayerId);
+				AmongUsClient.Instance.FinishRpcImmediately(writer);
+				RPCProcedure.medicSetShielded(Medic.futureShielded.PlayerId);
+			}
+			if (Medic.usedShield) Medic.meetingAfterShielding = true;  // Has to be after the setting of the shield
 
-            // Shifter shift
-            if (Shifter.shifter != null && AmongUsClient.Instance.AmHost && Shifter.futureShift != null) { // We need to send the RPC from the host here, to make sure that the order of shifting and erasing is correct (for that reason the futureShifted and futureErased are being synced)
-                MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(CachedPlayer.LocalPlayer.PlayerControl.NetId, (byte)CustomRPC.ShifterShift, Hazel.SendOption.Reliable, -1);
-                writer.Write(Shifter.futureShift.PlayerId);
-                AmongUsClient.Instance.FinishRpcImmediately(writer);
-                RPCProcedure.shifterShift(Shifter.futureShift.PlayerId);
-            }
-            Shifter.futureShift = null;
+			// Shifter shift
+			if (Shifter.shifter != null && AmongUsClient.Instance.AmHost && Shifter.futureShift != null)
+			{ // We need to send the RPC from the host here, to make sure that the order of shifting and erasing is correct (for that reason the futureShifted and futureErased are being synced)
+				MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(CachedPlayer.LocalPlayer.PlayerControl.NetId, (byte)CustomRPC.ShifterShift, Hazel.SendOption.Reliable, -1);
+				writer.Write(Shifter.futureShift.PlayerId);
+				AmongUsClient.Instance.FinishRpcImmediately(writer);
+				RPCProcedure.shifterShift(Shifter.futureShift.PlayerId);
+			}
+			Shifter.futureShift = null;
 
-            // Eraser erase
-            if (Eraser.eraser != null && AmongUsClient.Instance.AmHost && Eraser.futureErased != null) {  // We need to send the RPC from the host here, to make sure that the order of shifting and erasing is correct (for that reason the futureShifted and futureErased are being synced)
-                foreach (PlayerControl target in Eraser.futureErased) {
-                    if (target != null && target.canBeErased()) {
-                        MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(CachedPlayer.LocalPlayer.PlayerControl.NetId, (byte)CustomRPC.ErasePlayerRoles, Hazel.SendOption.Reliable, -1);
-                        writer.Write(target.PlayerId);
-                        AmongUsClient.Instance.FinishRpcImmediately(writer);
-                        RPCProcedure.erasePlayerRoles(target.PlayerId);
-                    }
-                }
-            }
-            Eraser.futureErased = new List<PlayerControl>();
+			if (Doomsayer.doomsayer != null && AmongUsClient.Instance.AmHost && !Doomsayer.canGuess) Doomsayer.canGuess = true;
 
-            // Trickster boxes
-            if (Trickster.trickster != null && JackInTheBox.hasJackInTheBoxLimitReached()) {
-                JackInTheBox.convertToVents();
-            }
+			// Eraser erase
+			if (Eraser.eraser != null && AmongUsClient.Instance.AmHost && Eraser.futureErased != null)
+			{  // We need to send the RPC from the host here, to make sure that the order of shifting and erasing is correct (for that reason the futureShifted and futureErased are being synced)
+				foreach (PlayerControl target in Eraser.futureErased)
+				{
+					MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(CachedPlayer.LocalPlayer.PlayerControl.NetId, (byte)CustomRPC.ErasePlayerRoles, Hazel.SendOption.Reliable, -1);
+					writer.Write(target.PlayerId);
+					AmongUsClient.Instance.FinishRpcImmediately(writer);
+					RPCProcedure.erasePlayerRoles(target.PlayerId);
+					Eraser.alreadyErased.Add(target.PlayerId);
+				}
+			}
+			Eraser.futureErased = new List<PlayerControl>();
 
-            // Activate portals.
-            Portal.meetingEndsUpdate();
+			// Trickster boxes
+			if (Trickster.trickster != null && JackInTheBox.hasJackInTheBoxLimitReached())
+			{
+				JackInTheBox.convertToVents();
+			}
 
-            // Witch execute casted spells
-            if (Witch.witch != null && Witch.futureSpelled != null && AmongUsClient.Instance.AmHost) {
-                bool exiledIsWitch = exiled != null && exiled.PlayerId == Witch.witch.PlayerId;
-                bool witchDiesWithExiledLover = exiled != null && Lovers.existing() && Lovers.bothDie && (Lovers.lover1.PlayerId == Witch.witch.PlayerId || Lovers.lover2.PlayerId == Witch.witch.PlayerId) && (exiled.PlayerId == Lovers.lover1.PlayerId || exiled.PlayerId == Lovers.lover2.PlayerId);
+			// Activate portals.
+			Portal.meetingEndsUpdate();
 
-                if ((witchDiesWithExiledLover || exiledIsWitch) && Witch.witchVoteSavesTargets) Witch.futureSpelled = new List<PlayerControl>();
-                foreach (PlayerControl target in Witch.futureSpelled) {
-                    if (target != null && !target.Data.IsDead && Helpers.checkMuderAttempt(Witch.witch, target, true) == MurderAttemptResult.PerformKill)
-                    {
-                        MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(CachedPlayer.LocalPlayer.PlayerControl.NetId, (byte)CustomRPC.UncheckedExilePlayer, Hazel.SendOption.Reliable, -1);
-                        writer.Write(target.PlayerId);
-                        AmongUsClient.Instance.FinishRpcImmediately(writer);
-                        RPCProcedure.uncheckedExilePlayer(target.PlayerId);
-                        if (target == Lawyer.target && Lawyer.lawyer != null) {
-                            MessageWriter writer2 = AmongUsClient.Instance.StartRpcImmediately(CachedPlayer.LocalPlayer.PlayerControl.NetId, (byte)CustomRPC.LawyerPromotesToPursuer, Hazel.SendOption.Reliable, -1);
-                            AmongUsClient.Instance.FinishRpcImmediately(writer2);
-                            RPCProcedure.lawyerPromotesToPursuer();
-                        }
-                    }
-                }
-            }
-            Witch.futureSpelled = new List<PlayerControl>();
+			// Witch execute casted spells
+			if (Witch.witch != null && Witch.futureSpelled != null && AmongUsClient.Instance.AmHost)
+			{
+				bool exiledIsWitch = exiled != null && exiled.PlayerId == Witch.witch.PlayerId;
+				bool witchDiesWithExiledLover = exiled != null && Lovers.existing() && Lovers.bothDie && (Lovers.lover1.PlayerId == Witch.witch.PlayerId || Lovers.lover2.PlayerId == Witch.witch.PlayerId) && (exiled.PlayerId == Lovers.lover1.PlayerId || exiled.PlayerId == Lovers.lover2.PlayerId);
 
-            // SecurityGuard vents and cameras
-            var allCameras = MapUtilities.CachedShipStatus.AllCameras.ToList();
-            MapOptionsTor.camerasToAdd.ForEach(camera => {
-                camera.gameObject.SetActive(true);
-                camera.gameObject.GetComponent<SpriteRenderer>().color = Color.white;
-                allCameras.Add(camera);
-            });
-            MapUtilities.CachedShipStatus.AllCameras = allCameras.ToArray();
-            MapOptionsTor.camerasToAdd = new List<SurvCamera>();
+				if ((witchDiesWithExiledLover || exiledIsWitch) && Witch.witchVoteSavesTargets) Witch.futureSpelled = new List<PlayerControl>();
+				foreach (PlayerControl target in Witch.futureSpelled)
+				{
+					if (target != null && !target.Data.IsDead && Helpers.checkMuderAttempt(Witch.witch, target, true) == MurderAttemptResult.PerformKill)
+					{
+						if (exiled != null && Lawyer.lawyer != null && (target == Lawyer.lawyer || target == Lovers.otherLover(Lawyer.lawyer)) && Lawyer.target != null && Lawyer.isProsecutor && Lawyer.target.PlayerId == exiled.PlayerId)
+							continue;
+						if (target == Lawyer.target && Lawyer.lawyer != null)
+						{
+							MessageWriter writer2 = AmongUsClient.Instance.StartRpcImmediately(CachedPlayer.LocalPlayer.PlayerControl.NetId, (byte)CustomRPC.LawyerPromotesToPursuer, Hazel.SendOption.Reliable, -1);
+							AmongUsClient.Instance.FinishRpcImmediately(writer2);
+							RPCProcedure.lawyerPromotesToPursuer();
+						}
+						MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(CachedPlayer.LocalPlayer.PlayerControl.NetId, (byte)CustomRPC.UncheckedExilePlayer, Hazel.SendOption.Reliable, -1);
+						writer.Write(target.PlayerId);
+						AmongUsClient.Instance.FinishRpcImmediately(writer);
+						RPCProcedure.uncheckedExilePlayer(target.PlayerId);
 
-            foreach (Vent vent in MapOptionsTor.ventsToSeal) {
-                PowerTools.SpriteAnim animator = vent.GetComponent<PowerTools.SpriteAnim>(); 
-                animator?.Stop();
-                vent.EnterVentAnim = vent.ExitVentAnim = null;
-                vent.myRend.sprite = animator == null ? SecurityGuard.getStaticVentSealedSprite() : SecurityGuard.getAnimatedVentSealedSprite();
-                if (SubmergedCompatibility.IsSubmerged && vent.Id == 0) vent.myRend.sprite = SecurityGuard.getSubmergedCentralUpperSealedSprite();
-                if (SubmergedCompatibility.IsSubmerged && vent.Id == 14) vent.myRend.sprite = SecurityGuard.getSubmergedCentralLowerSealedSprite();
-                vent.myRend.color = Color.white;
-                vent.name = "SealedVent_" + vent.name;
-            }
-            MapOptionsTor.ventsToSeal = new List<Vent>();
+						MessageWriter writer3 = AmongUsClient.Instance.StartRpcImmediately(CachedPlayer.LocalPlayer.PlayerControl.NetId, (byte)CustomRPC.ShareGhostInfo, Hazel.SendOption.Reliable, -1);
+						writer3.Write(CachedPlayer.LocalPlayer.PlayerId);
+						writer3.Write((byte)RPCProcedure.GhostInfoTypes.DeathReasonAndKiller);
+						writer3.Write(target.PlayerId);
+						writer3.Write((byte)DeadPlayer.CustomDeathReason.WitchExile);
+						writer3.Write(Witch.witch.PlayerId);
+						AmongUsClient.Instance.FinishRpcImmediately(writer3);
 
-            // 1 = reset per turn
-            if (MapOptionsTor.restrictDevices == 1)
-                MapOptionsTor.resetDeviceTimes();
+						GameHistory.overrideDeathReasonAndKiller(target, DeadPlayer.CustomDeathReason.WitchExile, killer: Witch.witch);
+					}
+				}
+			}
+			Witch.futureSpelled = new List<PlayerControl>();
 
-        }
-    }
+			// SecurityGuard vents and cameras
+			var allCameras = MapUtilities.CachedShipStatus.AllCameras.ToList();
+			MapOptionsTor.camerasToAdd.ForEach(camera =>
+			{
+				camera.gameObject.SetActive(true);
+				camera.gameObject.GetComponent<SpriteRenderer>().color = Color.white;
+				allCameras.Add(camera);
+			});
+			MapUtilities.CachedShipStatus.AllCameras = allCameras.ToArray();
+			MapOptionsTor.camerasToAdd = new List<SurvCamera>();
 
-    [HarmonyPatch]
-    class ExileControllerWrapUpPatch {
+			foreach (Vent vent in MapOptionsTor.ventsToSeal)
+			{
+				PowerTools.SpriteAnim animator = vent.GetComponent<PowerTools.SpriteAnim>();
+				vent.EnterVentAnim = vent.ExitVentAnim = null;
+				Sprite newSprite = animator == null ? SecurityGuard.getStaticVentSealedSprite() : SecurityGuard.getAnimatedVentSealedSprite();
+				SpriteRenderer rend = vent.myRend;
+				if (Helpers.isFungle())
+				{
+					newSprite = SecurityGuard.getFungleVentSealedSprite();
+					rend = vent.transform.GetChild(3).GetComponent<SpriteRenderer>();
+					animator = vent.transform.GetChild(3).GetComponent<PowerTools.SpriteAnim>();
+				}
+				animator?.Stop();
+				rend.sprite = newSprite;
+				if (SubmergedCompatibility.IsSubmerged && vent.Id == 0) vent.myRend.sprite = SecurityGuard.getSubmergedCentralUpperSealedSprite();
+				if (SubmergedCompatibility.IsSubmerged && vent.Id == 14) vent.myRend.sprite = SecurityGuard.getSubmergedCentralLowerSealedSprite();
+				rend.color = Color.white;
+				vent.name = "SealedVent_" + vent.name;
+			}
+			MapOptionsTor.ventsToSeal = new List<Vent>();
 
-        [HarmonyPatch(typeof(ExileController), nameof(ExileController.WrapUp))]
-        class BaseExileControllerPatch {
-            public static void Postfix(ExileController __instance) {
-                WrapUpPostfix(__instance.exiled);
-            }
-        }
+			EventUtility.meetingEndsUpdate();
 
-        [HarmonyPatch(typeof(AirshipExileController), nameof(AirshipExileController.WrapUpAndSpawn))]
-        class AirshipExileControllerPatch {
-            public static void Postfix(AirshipExileController __instance) {
-                WrapUpPostfix(__instance.exiled);
-            }
-        }
+			// 1 = reset per turn
+			if (MapOptionsTor.restrictDevices == 1)
+				MapOptionsTor.resetDeviceTimes();
 
-        // Workaround to add a "postfix" to the destroying of the exile controller (i.e. cutscene) and SpwanInMinigame of submerged
-        [HarmonyPatch(typeof(UnityEngine.Object), nameof(UnityEngine.Object.Destroy), new Type[] { typeof(GameObject) })]
-        public static void Prefix(GameObject obj) {
-            if (!SubmergedCompatibility.IsSubmerged) return;
-            if (obj.name.Contains("ExileCutscene")) {
-                WrapUpPostfix(ExileControllerBeginPatch.lastExiled);
-            } else if (obj.name.Contains("SpawnInMinigame")) {
-                AntiTeleport.setPosition();
-                Chameleon.lastMoved.Clear();
-            }
-        }
+		}
+	}
 
-        static void WrapUpPostfix(GameData.PlayerInfo exiled) {
-            // Mini exile lose condition
-            if (exiled != null && Mini.mini != null && Mini.mini.PlayerId == exiled.PlayerId && !Mini.isGrownUp() && !Mini.mini.Data.Role.IsImpostor && !RoleInfo.getRoleInfoForPlayer(Mini.mini).Any(x => x.isNeutral)) {
-                Mini.triggerMiniLose = true;
-            }
-            // Jester win condition
-            else if (exiled != null && Jester.jester != null && Jester.jester.PlayerId == exiled.PlayerId) {
-                Jester.triggerJesterWin = true;
-            }
-            // Prosecutor win condition
-            else if (exiled != null && Prosecutor.prosecutor != null && Prosecutor.target.PlayerId == exiled.PlayerId && !Prosecutor.prosecutor.Data.IsDead) {
-                Prosecutor.triggerProsecutorWin = true;
-            }
+	[HarmonyPatch]
+	class ExileControllerWrapUpPatch
+	{
 
-            // Reset custom button timers where necessary
-            CustomButton.MeetingEndedUpdate();
+		[HarmonyPatch(typeof(ExileController), nameof(ExileController.WrapUp))]
+		class BaseExileControllerPatch
+		{
+			public static void Postfix(ExileController __instance)
+			{
+				WrapUpPostfix(__instance.exiled);
+			}
+		}
 
-            // Mini set adapted cooldown
-            if (Mini.mini != null && CachedPlayer.LocalPlayer.PlayerControl == Mini.mini && Mini.mini.Data.Role.IsImpostor) {
-                var multiplier = Mini.isGrownUp() ? 0.66f : 2f;
-                Mini.mini.SetKillTimer(GameOptionsManager.Instance.currentNormalGameOptions.KillCooldown * multiplier);
-            }
+		[HarmonyPatch(typeof(AirshipExileController), nameof(AirshipExileController.WrapUpAndSpawn))]
+		class AirshipExileControllerPatch
+		{
+			public static void Postfix(AirshipExileController __instance)
+			{
+				WrapUpPostfix(__instance.exiled);
+			}
+		}
 
-            // Seer spawn souls
-            if (Seer.deadBodyPositions != null && Seer.seer != null && CachedPlayer.LocalPlayer.PlayerControl == Seer.seer && (Seer.mode == 0 || Seer.mode == 2)) {
-                foreach (Vector3 pos in Seer.deadBodyPositions) {
-                    GameObject soul = new GameObject();
-                    //soul.transform.position = pos;
-                    soul.transform.position = new Vector3(pos.x, pos.y, pos.y / 1000 - 1f);
-                    soul.layer = 5;
-                    var rend = soul.AddComponent<SpriteRenderer>();
-                    soul.AddSubmergedComponent(SubmergedCompatibility.Classes.ElevatorMover);
-                    rend.sprite = Seer.getSoulSprite();
-                    
-                    if(Seer.limitSoulDuration) {
-                        FastDestroyableSingleton<HudManager>.Instance.StartCoroutine(Effects.Lerp(Seer.soulDuration, new Action<float>((p) => {
-                            if (rend != null) {
-                                var tmp = rend.color;
-                                tmp.a = Mathf.Clamp01(1 - p);
-                                rend.color = tmp;
-                            }    
-                            if (p == 1f && rend != null && rend.gameObject != null) UnityEngine.Object.Destroy(rend.gameObject);
-                        })));
-                    }
-                }
-                Seer.deadBodyPositions = new List<Vector3>();
-            }
+		// Workaround to add a "postfix" to the destroying of the exile controller (i.e. cutscene) and SpwanInMinigame of submerged
+		[HarmonyPatch(typeof(UnityEngine.Object), nameof(UnityEngine.Object.Destroy), new Type[] { typeof(GameObject) })]
+		public static void Prefix(GameObject obj)
+		{
+			// Nightvision:
+			if (obj != null && obj.name != null && obj.name.Contains("FungleSecurity"))
+			{
+				SurveillanceMinigamePatch.resetNightVision();
+				return;
+			}
 
-            // Tracker reset deadBodyPositions
-            Tracker.deadBodyPositions = new List<Vector3>();
+			// submerged
+			if (!SubmergedCompatibility.IsSubmerged) return;
+			if (obj.name.Contains("ExileCutscene"))
+			{
+				WrapUpPostfix(ExileControllerBeginPatch.lastExiled);
+			}
+			else if (obj.name.Contains("SpawnInMinigame"))
+			{
+				AntiTeleport.setPosition();
+				Chameleon.lastMoved.Clear();
+			}
+		}
 
-	    if (Blackmailer.blackmailer != null && Blackmailer.blackmailed != null) {
-    	        // Blackmailer reset blackmailed
- 	        MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(CachedPlayer.LocalPlayer.PlayerControl.NetId, (byte)CustomRPC.UnblackmailPlayer, Hazel.SendOption.Reliable, -1);
-	        AmongUsClient.Instance.FinishRpcImmediately(writer);
-	        RPCProcedure.unblackmailPlayer();
-	    }	    
+		static void WrapUpPostfix(NetworkedPlayerInfo exiled)
+		{
+			// Prosecutor win condition
+			if (exiled != null && Lawyer.lawyer != null && Lawyer.target != null && Lawyer.isProsecutor && Lawyer.target.PlayerId == exiled.PlayerId && !Lawyer.lawyer.Data.IsDead)
+				Lawyer.triggerProsecutorWin = true;
+			// Mini exile lose condition
+			else if (exiled != null && Mini.mini != null && Mini.mini.PlayerId == exiled.PlayerId && !Mini.isGrownUp() && !Mini.mini.Data.Role.IsImpostor && !RoleInfo.getRoleInfoForPlayer(Mini.mini).Any(x => x.isNeutral))
+			{
+				Mini.triggerMiniLose = true;
+			}
+			// Jester win condition
+			else if (exiled != null && Jester.jester != null && Jester.jester.PlayerId == exiled.PlayerId)
+			{
+				Jester.triggerJesterWin = true;
+			}
+
+			// Reset custom button timers where necessary
+			CustomButton.MeetingEndedUpdate();
+
+			// Mini set adapted cooldown
+			if (Mini.mini != null && CachedPlayer.LocalPlayer.PlayerControl == Mini.mini && Mini.mini.Data.Role.IsImpostor)
+			{
+				var multiplier = Mini.isGrownUp() ? 0.66f : 2f;
+				Mini.mini.SetKillTimer(GameOptionsManager.Instance.currentNormalGameOptions.KillCooldown * multiplier);
+			}
+
+			// Seer spawn souls
+			if (Seer.deadBodyPositions != null && Seer.seer != null && CachedPlayer.LocalPlayer.PlayerControl == Seer.seer && (Seer.mode == 0 || Seer.mode == 2))
+			{
+				foreach (Vector3 pos in Seer.deadBodyPositions)
+				{
+					GameObject soul = new GameObject();
+					//soul.transform.position = pos;
+					soul.transform.position = new Vector3(pos.x, pos.y, pos.y / 1000 - 1f);
+					soul.layer = 5;
+					var rend = soul.AddComponent<SpriteRenderer>();
+					soul.AddSubmergedComponent(SubmergedCompatibility.Classes.ElevatorMover);
+					rend.sprite = Seer.getSoulSprite();
+
+					if (Seer.limitSoulDuration)
+					{
+						FastDestroyableSingleton<HudManager>.Instance.StartCoroutine(Effects.Lerp(Seer.soulDuration, new Action<float>((p) =>
+						{
+							if (rend != null)
+							{
+								var tmp = rend.color;
+								tmp.a = Mathf.Clamp01(1 - p);
+								rend.color = tmp;
+							}
+							if (p == 1f && rend != null && rend.gameObject != null) UnityEngine.Object.Destroy(rend.gameObject);
+						})));
+					}
+				}
+				Seer.deadBodyPositions = new List<Vector3>();
+			}
+
+			if (PlagueDoctor.plagueDoctor != null)
+			{
+				PlagueDoctor.updateDead();
+
+				FastDestroyableSingleton<HudManager>.Instance.StartCoroutine(Effects.Lerp(PlagueDoctor.immunityTime, new Action<float>((p) =>
+				{ // Infection begins after 5 seconds
+					if (p == 1f)
+					{
+						PlagueDoctor.meetingFlag = false;
+					}
+				})));
+			}
+
+			// Tracker reset deadBodyPositions
+			Tracker.deadBodyPositions = new List<Vector3>();
+
+			if (Blackmailer.blackmailer != null && Blackmailer.blackmailed != null)
+			{
+				// Blackmailer reset blackmailed
+				MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(CachedPlayer.LocalPlayer.PlayerControl.NetId, (byte)CustomRPC.UnblackmailPlayer, Hazel.SendOption.Reliable, -1);
+				AmongUsClient.Instance.FinishRpcImmediately(writer);
+				RPCProcedure.unblackmailPlayer();
+			}
 
 
-            // Arsonist deactivate dead poolable players
-            if (Arsonist.arsonist != null && Arsonist.arsonist == CachedPlayer.LocalPlayer.PlayerControl) {
-                int visibleCounter = 0;
-                Vector3 newBottomLeft = IntroCutsceneOnDestroyPatch.bottomLeft;
-                var BottomLeft = newBottomLeft + new Vector3(-0.25f, -0.25f, 0);
-                foreach (PlayerControl p in CachedPlayer.AllPlayers) {
-                    if (!MapOptionsTor.playerIcons.ContainsKey(p.PlayerId)) continue;
-                    if (p.Data.IsDead || p.Data.Disconnected) {
-                        MapOptionsTor.playerIcons[p.PlayerId].gameObject.SetActive(false);
-                    } else {
-                        MapOptionsTor.playerIcons[p.PlayerId].transform.localPosition = newBottomLeft + Vector3.right * visibleCounter * 0.35f;
-                        visibleCounter++;
-                    }
-                }
-            }
+			// Arsonist deactivate dead poolable players
+			if (Arsonist.arsonist != null && Arsonist.arsonist == CachedPlayer.LocalPlayer.PlayerControl)
+			{
+				int visibleCounter = 0;
+				Vector3 newBottomLeft = IntroCutsceneOnDestroyPatch.bottomLeft;
+				var BottomLeft = newBottomLeft + new Vector3(-0.25f, -0.25f, 0);
+				foreach (PlayerControl p in CachedPlayer.AllPlayers)
+				{
+					if (!MapOptionsTor.playerIcons.ContainsKey(p.PlayerId)) continue;
+					if (p.Data.IsDead || p.Data.Disconnected)
+					{
+						MapOptionsTor.playerIcons[p.PlayerId].gameObject.SetActive(false);
+					}
+					else
+					{
+						MapOptionsTor.playerIcons[p.PlayerId].transform.localPosition = newBottomLeft + Vector3.right * visibleCounter * 0.35f;
+						visibleCounter++;
+					}
+				}
+			}
 
-            // Deputy check Promotion, see if the sheriff still exists. The promotion will be after the meeting.
-            if (Deputy.deputy != null)
-            {
-                PlayerControlFixedUpdatePatch.deputyCheckPromotion(isMeeting: true);
-            }
+			// Deputy check Promotion, see if the sheriff still exists. The promotion will be after the meeting.
+			if (Deputy.deputy != null)
+			{
+				PlayerControlFixedUpdatePatch.deputyCheckPromotion(isMeeting: true);
+			}
 
-            // Force Bounty Hunter Bounty Update
-            if (BountyHunter.bountyHunter != null && BountyHunter.bountyHunter == CachedPlayer.LocalPlayer.PlayerControl)
-                BountyHunter.bountyUpdateTimer = 0f;
+			// Force Bounty Hunter Bounty Update
+			if (BountyHunter.bountyHunter != null && BountyHunter.bountyHunter == CachedPlayer.LocalPlayer.PlayerControl)
+				BountyHunter.bountyUpdateTimer = 0f;
 
-            // Medium spawn souls
-            if (Medium.medium != null && CachedPlayer.LocalPlayer.PlayerControl == Medium.medium) {
-                if (Medium.souls != null) {
-                    foreach (SpriteRenderer sr in Medium.souls) UnityEngine.Object.Destroy(sr.gameObject);
-                    Medium.souls = new List<SpriteRenderer>();
-                }
+			// Medium spawn souls
+			if (Medium.medium != null && CachedPlayer.LocalPlayer.PlayerControl == Medium.medium)
+			{
+				if (Medium.souls != null)
+				{
+					foreach (SpriteRenderer sr in Medium.souls) UnityEngine.Object.Destroy(sr.gameObject);
+					Medium.souls = new List<SpriteRenderer>();
+				}
 
-                if (Medium.featureDeadBodies != null) {
-                    foreach ((DeadPlayer db, Vector3 ps) in Medium.featureDeadBodies) {
-                        GameObject s = new GameObject();
-                        //s.transform.position = ps;
-                        s.transform.position = new Vector3(ps.x, ps.y, ps.y / 1000 - 1f);
-                        s.layer = 5;
-                        var rend = s.AddComponent<SpriteRenderer>();
-                        s.AddSubmergedComponent(SubmergedCompatibility.Classes.ElevatorMover);
-                        rend.sprite = Medium.getSoulSprite();
-                        Medium.souls.Add(rend);
-                    }
-                    Medium.deadBodies = Medium.featureDeadBodies;
-                    Medium.featureDeadBodies = new List<Tuple<DeadPlayer, Vector3>>();
-                }
-            }
+				if (Medium.futureDeadBodies != null)
+				{
+					foreach ((DeadPlayer db, Vector3 ps) in Medium.futureDeadBodies)
+					{
+						GameObject s = new GameObject();
+						//s.transform.position = ps;
+						s.transform.position = new Vector3(ps.x, ps.y, ps.y / 1000 - 1f);
+						s.layer = 5;
+						var rend = s.AddComponent<SpriteRenderer>();
+						s.AddSubmergedComponent(SubmergedCompatibility.Classes.ElevatorMover);
+						rend.sprite = Medium.getSoulSprite();
+						Medium.souls.Add(rend);
+					}
+					Medium.deadBodies = Medium.futureDeadBodies;
+					Medium.futureDeadBodies = new List<Tuple<DeadPlayer, Vector3>>();
+				}
+			}
 
-            // AntiTeleport set position
-            AntiTeleport.setPosition();
-            if (CustomOptionHolder.randomGameStartPosition.getBool() &&  (AntiTeleport.antiTeleport.FindAll(x => x.PlayerId == CachedPlayer.LocalPlayer.PlayerControl.PlayerId).Count == 0)) { //Random spawn on round start
+			// AntiTeleport set position
+			AntiTeleport.setPosition();
+			if (CustomOptionHolder.randomGameStartPosition.getBool() && (AntiTeleport.antiTeleport.FindAll(x => x.PlayerId == CachedPlayer.LocalPlayer.PlayerControl.PlayerId).Count == 0))
+			{ //Random spawn on round start
 
-                List<Vector3> skeldSpawn = new List<Vector3>() {
-                new Vector3(-2.2f, 2.2f, 0.0f), //cafeteria. botton. top left.
+				List<Vector3> skeldSpawn = new List<Vector3>() {
+				new Vector3(-2.2f, 2.2f, 0.0f), //cafeteria. botton. top left.
                 new Vector3(0.7f, 2.2f, 0.0f), //caffeteria. button. top right.
                 new Vector3(-2.2f, -0.2f, 0.0f), //caffeteria. button. bottom left.
                 new Vector3(0.7f, -0.2f, 0.0f), //caffeteria. button. bottom right.
@@ -290,8 +375,8 @@ namespace TheOtherRoles.Patches {
                 new Vector3(-6.5f, -4.5f, 0.0f) //medbay bottom
                 };
 
-                List<Vector3> miraSpawn = new List<Vector3>() {
-                new Vector3(-4.5f, 3.5f, 0.0f), //launchpad top
+				List<Vector3> miraSpawn = new List<Vector3>() {
+				new Vector3(-4.5f, 3.5f, 0.0f), //launchpad top
                 new Vector3(-4.5f, -1.4f, 0.0f), //launchpad bottom
                 new Vector3(8.5f, -1f, 0.0f), //launchpad- med hall
                 new Vector3(14f, -1.5f, 0.0f), //medbay
@@ -347,10 +432,10 @@ namespace TheOtherRoles.Patches {
                 new Vector3(5f, -9f, 0.0f), //elec window
                 new Vector3(4f, -11.2f, 0.0f), //elec tapes
                 new Vector3(5.5f, -16f, 0.0f), //elec-O2 hall
-                new Vector3(1f, -17.5f, 0.0f), //O2 tree hayball
+                new Vector3(1.2f, -17.5f, 0.0f), //O2 tree hayball
                 new Vector3(3f, -21f, 0.0f), //O2 middle
                 new Vector3(2f, -19f, 0.0f), //O2 gas
-                new Vector3(1f, -24f, 0.0f), //O2 water
+                new Vector3(1.4f, -24f, 0.0f), //O2 water
                 new Vector3(7f, -24f, 0.0f), //under O2
                 new Vector3(9f, -20f, 0.0f), //right outside of O2
                 new Vector3(7f, -15.8f, 0.0f), //snowman under elec
@@ -362,7 +447,7 @@ namespace TheOtherRoles.Patches {
                 };
 
                 List<Vector3> dleksSpawn = new List<Vector3>() {
-                new Vector3(2.2f, 2.2f, 0.0f), //cafeteria. botton. top left.
+				new Vector3(2.2f, 2.2f, 0.0f), //cafeteria. botton. top left.
                 new Vector3(-0.7f, 2.2f, 0.0f), //caffeteria. button. top right.
                 new Vector3(2.2f, -0.2f, 0.0f), //caffeteria. button. bottom left.
                 new Vector3(-0.7f, -0.2f, 0.0f), //caffeteria. button. bottom right.
@@ -402,57 +487,100 @@ namespace TheOtherRoles.Patches {
                 new Vector3(6.5f, -4.5f, 0.0f) //medbay bottom
                 };
 
-                List<Vector3> airshipSpawn = new List<Vector3>() { }; //no spawns since it already has random spawns
+				List<Vector3> fungleSpawn = new List<Vector3>() {
+				new Vector3(-10.0842f, 13.0026f, 0.013f),
+				new Vector3(0.9815f, 6.7968f, 0.0068f),
+				new Vector3(22.5621f, 3.2779f, 0.0033f),
+				new Vector3(-1.8699f, -1.3406f, -0.0013f),
+				new Vector3(12.0036f, 2.6763f, 0.0027f),
+				new Vector3(21.705f, -7.8691f, -0.0079f),
+				new Vector3(1.4485f, -1.6105f, -0.0016f),
+				new Vector3(-4.0766f, -8.7178f, -0.0087f),
+				new Vector3(2.9486f, 1.1347f, 0.0011f),
+				new Vector3(-4.2181f, -8.6795f, -0.0087f),
+				new Vector3(19.5553f, -12.5014f, -0.0125f),
+				new Vector3(15.2497f, -16.5009f, -0.0165f),
+				new Vector3(-22.7174f, -7.0523f, 0.0071f),
+				new Vector3(-16.5819f, -2.1575f, 0.0022f),
+				new Vector3(9.399f, -9.7127f, -0.0097f),
+				new Vector3(7.3723f, 1.7373f, 0.0017f),
+				new Vector3(22.0777f, -7.9315f, -0.0079f),
+				new Vector3(-15.3916f, -9.3659f, -0.0094f),
+				new Vector3(-16.1207f, -0.1746f, -0.0002f),
+				new Vector3(-23.1353f, -7.2472f, -0.0072f),
+				new Vector3(-20.0692f, -2.6245f, -0.0026f),
+				new Vector3(-4.2181f, -8.6795f, -0.0087f),
+				new Vector3(-9.9285f, 12.9848f, 0.013f),
+				new Vector3(-8.3475f, 1.6215f, 0.0016f),
+				new Vector3(-17.7614f, 6.9115f, 0.0069f),
+				new Vector3(-0.5743f, -4.7235f, -0.0047f),
+				new Vector3(-20.8897f, 2.7606f, 0.002f)
+				};
 
-                if (GameOptionsManager.Instance.currentNormalGameOptions.MapId == 0) CachedPlayer.LocalPlayer.PlayerControl.transform.position = skeldSpawn[rnd.Next(skeldSpawn.Count)];
-                if (GameOptionsManager.Instance.currentNormalGameOptions.MapId == 1) CachedPlayer.LocalPlayer.PlayerControl.transform.position = miraSpawn[rnd.Next(miraSpawn.Count)];
-                if (GameOptionsManager.Instance.currentNormalGameOptions.MapId == 2) CachedPlayer.LocalPlayer.PlayerControl.transform.position = polusSpawn[rnd.Next(polusSpawn.Count)];
-                if (GameOptionsManager.Instance.currentNormalGameOptions.MapId == 3) CachedPlayer.LocalPlayer.PlayerControl.transform.position = dleksSpawn[rnd.Next(dleksSpawn.Count)];
-                if (GameOptionsManager.Instance.currentNormalGameOptions.MapId == 4) CachedPlayer.LocalPlayer.PlayerControl.transform.position = airshipSpawn[rnd.Next(airshipSpawn.Count)];
+				List<Vector3> airshipSpawn = new List<Vector3>() { }; //no spawns since it already has random spawns
 
-            }
+				if (GameOptionsManager.Instance.currentNormalGameOptions.MapId == 0) CachedPlayer.LocalPlayer.PlayerControl.transform.position = skeldSpawn[rnd.Next(skeldSpawn.Count)];
+				if (GameOptionsManager.Instance.currentNormalGameOptions.MapId == 1) CachedPlayer.LocalPlayer.PlayerControl.transform.position = miraSpawn[rnd.Next(miraSpawn.Count)];
+				if (GameOptionsManager.Instance.currentNormalGameOptions.MapId == 2) CachedPlayer.LocalPlayer.PlayerControl.transform.position = polusSpawn[rnd.Next(polusSpawn.Count)];
+				if (GameOptionsManager.Instance.currentNormalGameOptions.MapId == 3) CachedPlayer.LocalPlayer.PlayerControl.transform.position = dleksSpawn[rnd.Next(dleksSpawn.Count)];
+				if (GameOptionsManager.Instance.currentNormalGameOptions.MapId == 4) CachedPlayer.LocalPlayer.PlayerControl.transform.position = airshipSpawn[rnd.Next(airshipSpawn.Count)];
+				if (GameOptionsManager.Instance.currentNormalGameOptions.MapId == 5) CachedPlayer.LocalPlayer.PlayerControl.transform.position = fungleSpawn[rnd.Next(fungleSpawn.Count)];
+			}
 
-            // Invert add meeting
-            if (Invert.meetings > 0) Invert.meetings--;
+			// Invert add meeting
+			if (Invert.meetings > 0) Invert.meetings--;
 
-            Chameleon.lastMoved.Clear();
+			Chameleon.lastMoved.Clear();
 
-            foreach (Trap trap in Trap.traps) trap.triggerable = false;
-            FastDestroyableSingleton<HudManager>.Instance.StartCoroutine(Effects.Lerp(GameOptionsManager.Instance.currentNormalGameOptions.KillCooldown / 2 + 2, new Action<float>((p) => {
-            if (p == 1f) foreach (Trap trap in Trap.traps) trap.triggerable = true;
-            })));
-        }
-    }
+			foreach (Trap trap in Trap.traps) trap.triggerable = false;
+			FastDestroyableSingleton<HudManager>.Instance.StartCoroutine(Effects.Lerp(GameOptionsManager.Instance.currentNormalGameOptions.KillCooldown / 2 + 2, new Action<float>((p) =>
+			{
+				if (p == 1f) foreach (Trap trap in Trap.traps) trap.triggerable = true;
+			})));
+			if (!Yoyo.markStaysOverMeeting)
+				Silhouette.clearSilhouettes();
+		}
+	}
 
-    [HarmonyPatch(typeof(SpawnInMinigame), nameof(SpawnInMinigame.Close))]  // Set position of AntiTp players AFTER they have selected a spawn.
-    class AirshipSpawnInPatch {
-        static void Postfix() {
-            AntiTeleport.setPosition();
-            Chameleon.lastMoved.Clear();
-        }
-    }
+	[HarmonyPatch(typeof(SpawnInMinigame), nameof(SpawnInMinigame.Close))]  // Set position of AntiTp players AFTER they have selected a spawn.
+	class AirshipSpawnInPatch
+	{
+		static void Postfix()
+		{
+			AntiTeleport.setPosition();
+			Chameleon.lastMoved.Clear();
+		}
+	}
 
-    [HarmonyPatch(typeof(TranslationController), nameof(TranslationController.GetString), new Type[] { typeof(StringNames), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
-    class ExileControllerMessagePatch {
-        static void Postfix(ref string __result, [HarmonyArgument(0)]StringNames id) {
-            try {
-                if (ExileController.Instance != null && ExileController.Instance.exiled != null) {
-                    PlayerControl player = Helpers.playerById(ExileController.Instance.exiled.Object.PlayerId);
-                    if (player == null) return;
-                    // Exile role text
-                    if (id == StringNames.ExileTextPN || id == StringNames.ExileTextSN || id == StringNames.ExileTextPP || id == StringNames.ExileTextSP) {
-                        __result = player.Data.PlayerName + " was The " + String.Join(" ", RoleInfo.getRoleInfoForPlayer(player, false).Select(x => x.name).ToArray());
-                    }
-                    // Hide number of remaining impostors on Jester win
-                    if (id == StringNames.ImpostorsRemainP || id == StringNames.ImpostorsRemainS) {
-                        if (Jester.jester != null && player.PlayerId == Jester.jester.PlayerId) __result = "";
-                    }
-                    if (Tiebreaker.isTiebreak) __result += " (Tiebreaker)";
-                    Tiebreaker.isTiebreak = false;
-                }
-            } catch {
-                // pass - Hopefully prevent leaving while exiling to softlock game
-            }
-        }
-    }
+	[HarmonyPatch(typeof(TranslationController), nameof(TranslationController.GetString), new Type[] { typeof(StringNames), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
+	class ExileControllerMessagePatch
+	{
+		static void Postfix(ref string __result, [HarmonyArgument(0)] StringNames id)
+		{
+			try
+			{
+				if (ExileController.Instance != null && ExileController.Instance.exiled != null)
+				{
+					PlayerControl player = Helpers.playerById(ExileController.Instance.exiled.Object.PlayerId);
+					if (player == null) return;
+					// Exile role text
+					if (id == StringNames.ExileTextPN || id == StringNames.ExileTextSN || id == StringNames.ExileTextPP || id == StringNames.ExileTextSP)
+					{
+						__result = string.Format(ModTranslation.GetString("Exile", 1), player.Data.PlayerName, String.Join(" ", RoleInfo.getRoleInfoForPlayer(player, false).Select(x => x.name).ToArray()));
+					}
+					// Hide number of remaining impostors on Jester win
+					if (id == StringNames.ImpostorsRemainP || id == StringNames.ImpostorsRemainS)
+					{
+						if (Jester.jester != null && player.PlayerId == Jester.jester.PlayerId) __result = "";
+					}
+					if (Tiebreaker.isTiebreak) __result += $" {ModTranslation.GetString("Exile", 2)}";
+					Tiebreaker.isTiebreak = false;
+				}
+			}
+			catch
+			{
+				// pass - Hopefully prevent leaving while exiling to softlock game
+			}
+		}
+	}
 }
