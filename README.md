@@ -44,7 +44,7 @@ As of v5.9.0, The Other Roles Community Edition now supports translation into ot
 # Releases
 | Among Us - Version| Mod Version | Link |
 |-----------|-------------|-----------------|
-| 2024.11.26 | v5.9.0 | [Download](https://github.com/FangkuaiYa/TheOtherRoles2/releases/tag/v5.9.0)
+| 2024.11.26 | v5.9.0 | [Download](https://github.com/FangkuaiYa/TheOtherRolesCE-Next/releases/tag/v5.9.0)
 
 <details>
   <summary>Click to show older versions</summary>
@@ -60,7 +60,7 @@ As of v5.9.0, The Other Roles Community Edition now supports translation into ot
   <summary>Click to show the Changelog</summary>
   
 **Beyond**
-   - Please see the release logs [here](https://github.com/FangkuaiYa/TheOtherRoles2/releases) for the newest changelogs
+   - Please see the release logs [here](https://github.com/FangkuaiYa/TheOtherRolesCE-Next/releases) for the newest changelogs
 
    **Version 5.9.0**  
 - Please wait
@@ -583,11 +583,6 @@ Not working? You might want to install the dependency [vc_redist](https://aka.ms
 3. Enable `winhttp.dll` via the proton winecfg (https://docs.bepinex.dev/articles/advanced/steam_interop.html#open-winecfg-for-the-target-game)
 4. Launch the game via Steam
 
-## Credits
-- [TheOtherRolesGMIA](https://github.com/dabao40/TheOtherRolesGMIA)
-- [TheOtherUs](https://github.com/SpexGH/TheOtherUs)
-- TheOtherUs-Edited
-
 ## The Other Roles Custom Servers
 **A custom server is not necessary and official servers are working just fine with the mod, but in case you want to set up and host your own server, here's a guide for you to follow.**
 
@@ -648,12 +643,12 @@ docker run -d -p 22023:22023/udp --env IMPOSTOR_AntiCheatEnabled=false --env IMP
 [TownOfUs](https://github.com/slushiegoose/Town-Of-Us) - Idea for the Swapper, Shifter, Arsonist and a similar Mayor role come from **Slushiegoose**\
 [Ottomated](https://twitter.com/ottomated_) - Idea for the Morphling, Snitch and Camouflager role come from **Ottomated**\
 [Crowded-Mod](https://github.com/CrowdedMods/CrowdedMod) - Our implementation for 10+ player lobbies is inspired by the one from the **Crowded Mod Team**\
-[Goose-Goose-Duck](https://store.steampowered.com/app/1568590/Goose_Goose_Duck) - Idea for the Vulture role come from **Slushygoose**
-[Prop-Hunt](https://github.com/ugackMiner53/PropHunt) - by ugackMiner53 - Idea and core code for the Prop Hunt game mode
-[TheEpicRoles](https://github.com/LaicosVK/TheEpicRoles) - Idea for the first kill shield (partly) and the tabbed option menu (fully + some code), by LaicosVK DasMonschta Nova
-[TheOtherUs](https://github.com/SpexGH/TheOtherUs) - Some codes(By Spex)
-[TheOtherRoles-GMIA](https://github.com/dabao40/TheOtherRolesGMIA) - Some codes - by Imp11 (Space thank)
-[TheOtherUs-Edited](https://github.com/mxyx-club/TheOtherUs-Edited) - Some codes - by mxyx-club
+[Goose-Goose-Duck](https://store.steampowered.com/app/1568590/Goose_Goose_Duck) - Idea for the Vulture role come from **Slushygoose**  
+[Prop-Hunt](https://github.com/ugackMiner53/PropHunt) - by ugackMiner53 - Idea and core code for the Prop Hunt game mode  
+[TheEpicRoles](https://github.com/LaicosVK/TheEpicRoles) - Idea for the first kill shield (partly) and the tabbed option menu (fully + some code), by LaicosVK DasMonschta Nova  
+[TheOtherUs](https://github.com/SpexGH/TheOtherUs) - Some codes(By Spex)  
+[TheOtherRoles-GMIA](https://github.com/dabao40/TheOtherRolesGMIA) - Some codes - by Imp11 (Space thank)  
+[TheOtherUs-Edited](https://github.com/mxyx-club/TheOtherUs-Edited) - Some codes - by mxyx-club  
 
 # Settings
 The mod adds a few new settings to Among Us (in addition to the role settings):
