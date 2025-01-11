@@ -101,27 +101,6 @@ namespace TheOtherRoles.Modules
             return AddKeyGuide(button, key, new(0.48f, 0.48f), removeExistingGuide, action: action);
         }
 
-        static public GameObject SetMouseActionIcon(GameObject button, bool show, string action = "mouseClick", bool atBottom = true)
-        {
-            if (!show)
-            {
-                button.gameObject.ForEachChild((Il2CppSystem.Action<GameObject>)(obj => { if (obj.name == "MouseAction") GameObject.Destroy(obj); }));
-                return null;
-            }
-            else
-            {
-                GameObject obj = new();
-                obj.name = "MouseAction";
-                obj.transform.SetParent(button.transform);
-                obj.layer = button.layer;
-                SpriteRenderer renderer = obj.AddComponent<SpriteRenderer>();
-                renderer.transform.localPosition = new(0.48f, atBottom ? -0.29f : 0.48f, -10f);
-                renderer.sprite = mouseDisableActionSprite.GetSprite();
-
-                return obj;
-            }
-        }
-
         static public void ShowVanillaKeyGuide(this HudManager manager)
         {
             //ボタンのガイドを表示
