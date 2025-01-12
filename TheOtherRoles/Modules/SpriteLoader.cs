@@ -2,7 +2,6 @@
 using System.IO;
 using System.Reflection;
 using UnityEngine;
-using static TheOtherRoles.Helpers;
 
 namespace TheOtherRoles.Modules
 {

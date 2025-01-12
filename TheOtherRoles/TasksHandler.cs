@@ -1,5 +1,5 @@
-using HarmonyLib;
 using System;
+using HarmonyLib;
 using TheOtherRoles.Utilities;
 
 namespace TheOtherRoles
