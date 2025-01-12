@@ -14,6 +14,7 @@ using HarmonyLib;
 using Hazel;
 using Il2CppSystem.Security.Cryptography;
 using Il2CppSystem.Text;
+using Reactor.Patches;
 using TheOtherRoles.Modules;
 using TheOtherRoles.Modules.CustomHats;
 using TheOtherRoles.Patches;
@@ -102,11 +103,16 @@ namespace TheOtherRoles
 
         public override void Load()
         {
+            ReactorVersionShower.TextUpdated += text =>
+            {
+                text.text = "";
+            };
             Logger = Log;
             Instance = this;
 
             ZipsLoad.Load();
             ModTranslation.Load();
+            Language.Load();
 
             _ = Helpers.checkBeta(); // Exit if running an expired beta
 

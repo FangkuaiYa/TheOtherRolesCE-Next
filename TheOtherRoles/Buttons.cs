@@ -729,6 +729,7 @@ namespace TheOtherRoles
                         if (Helpers.checkAndDoVetKill(Morphling.currentTarget)) return;
                         Helpers.checkWatchFlash(Morphling.currentTarget);
                         Morphling.sampledTarget = Morphling.currentTarget;
+                        morphlingButton.resetKeyBind();
                         morphlingButton.Sprite = Morphling.getMorphSprite();
                         morphlingButton.EffectDuration = 1f;
                         if (MapOptionsTor.enableSoundEffects) SoundManager.Instance.PlaySound(CustomMain.customZips.morphlingSample, false, 0.8f);
@@ -756,6 +757,7 @@ namespace TheOtherRoles
                     morphlingButton.actionButton.cooldownTimerText.color = Palette.EnabledColor;
                     Morphling.sampledTarget = null;
                     setButtonTargetDisplay(null);
+                    morphlingButton.resetKeyBind();
                 },
                 Morphling.getSampleSprite(),
                 CustomButton.ButtonPositions.upperRowLeft,
@@ -1149,11 +1151,13 @@ namespace TheOtherRoles
                 {
                     if (Vampire.targetNearGarlic)
                     {
+                        vampireKillButton.resetKeyBind();
                         vampireKillButton.buttonText = ModTranslation.GetString("Button", 3);
                         showTargetNameOnButton(Vampire.currentTarget, vampireKillButton, ModTranslation.GetString("Button", 3));
                     }
                     else
                     {
+                        vampireKillButton.resetKeyBind();
                         vampireKillButton.buttonText = ModTranslation.GetString("Button", 20);
                         showTargetNameOnButton(Vampire.currentTarget, vampireKillButton, ModTranslation.GetString("Button", 20));
                     }
@@ -1976,11 +1980,13 @@ namespace TheOtherRoles
                 {
                     if (Warlock.curseVictim != null)
                     {
+                        warlockCurseButton.resetKeyBind();
                         showTargetNameOnButton(Warlock.currentTarget, warlockCurseButton, ModTranslation.GetString("Button", 3));
                         warlockCurseButton.buttonText = ModTranslation.GetString("Button", 3);
                     }
                     else
                     {
+                        warlockCurseButton.resetKeyBind();
                         showTargetNameOnButton(Warlock.currentTarget, warlockCurseButton, ModTranslation.GetString("Button", 33));
                         warlockCurseButton.buttonText = ModTranslation.GetString("Button", 33);
                     }
@@ -2012,6 +2018,7 @@ namespace TheOtherRoles
                         writer.EndMessage();
                         RPCProcedure.sealVent(SecurityGuard.ventTarget.Id);
                         SecurityGuard.ventTarget = null;
+                        securityGuardButton.resetKeyBind();
                         securityGuardButton.buttonText = ModTranslation.GetString("Button", 34);
 
                     }
@@ -2026,6 +2033,7 @@ namespace TheOtherRoles
                         writer.WriteBytesAndSize(buff);
                         writer.EndMessage();
                         RPCProcedure.placeCamera(buff);
+                        securityGuardButton.resetKeyBind();
                         securityGuardButton.buttonText = ModTranslation.GetString("Button", 35);
                     }
                     if (MapOptionsTor.enableSoundEffects) SoundManager.Instance.PlaySound(CustomMain.customZips.securityGuardPlaceCam, false, 0.8f);                    // Same sound used for both types (cam or vent)!
@@ -2146,6 +2154,7 @@ namespace TheOtherRoles
                         AmongUsClient.Instance.FinishRpcImmediately(winWriter);
                         RPCProcedure.arsonistWin();
                         arsonistButton.HasEffect = false;
+                        arsonistButton.resetKeyBind();
                         arsonistButton.buttonText = ModTranslation.GetString("Button", 37);
                     }
                     else if (Arsonist.currentTarget != null)

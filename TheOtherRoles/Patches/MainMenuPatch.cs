@@ -267,7 +267,7 @@ TheOtherUs-Edited(mxyx-club) - Some codes</size>";
             TOR_Background = new GameObject("TOR Background");
             TOR_Background.transform.position = new Vector3(0, 0, 520f);
             var bgRenderer = TOR_Background.AddComponent<SpriteRenderer>();
-            bgRenderer.sprite = Helpers.loadSpriteFromResources("TheOtherRoles.Resources.MainMenu.TOR_BG.jpg", 179f);
+            bgRenderer.sprite = Helpers.loadSpriteFromResources("TheOtherRoles.Resources.MainMenu.TOR_BG.png", 179f);
 
             if (!(Ambience = GameObject.Find("Ambience"))) return;
             if (!(Starfield = Ambience.transform.FindChild("starfield").gameObject)) return;
@@ -288,11 +288,11 @@ TheOtherUs-Edited(mxyx-club) - Some codes</size>";
             Dictionary<List<PassiveButton>, (Sprite, Color, Color, Color, Color)> mainButtons = new()
             {
                 {new List<PassiveButton>() {__instance.playButton, __instance.inventoryButton, __instance.shopButton},
-                    (standardActiveSprite, new(0.57f, 0.99f, 1f, 0.8f), shade, Color.white, Color.white) },
+                    (standardActiveSprite, new(0.65f, 0.03f, 0.79f, 0.8f), shade, Color.white, Color.white) },
                 {new List<PassiveButton>() {__instance.newsButton, __instance.myAccountButton, __instance.settingsButton},
-                    (minorActiveSprite, new(0.09f, 0.917f, 0.67f, 0.8f), shade, Color.white, Color.white) },
+                    (minorActiveSprite, new(1.12f, 0.02f, 1.08f, 0.8f), shade, Color.white, Color.white) },
                 {new List<PassiveButton>() {__instance.creditsButton, __instance.quitButton},
-                    (minorActiveSprite, new(0.098f, 0.917f, 0.427f, 0.8f), shade, Color.white, Color.white) },
+                    (minorActiveSprite, new(1.12f, 0.02f, 0.77f, 0.8f), shade, Color.white, Color.white) },
             };
             try
             {
@@ -387,23 +387,6 @@ TheOtherUs-Edited(mxyx-club) - Some codes</size>";
         public static void Postfix(CreditsScreenPopUp __instance)
         {
             __instance.BackButton.transform.parent.FindChild("Background").gameObject.SetActive(false);
-        }
-    }
-
-    [HarmonyPatch(typeof(SplashManager), nameof(SplashManager.Start))]
-    public class SplashManagerPatch
-    {
-        public static TextMeshPro loadText = null!;
-        public static bool Prefix(SplashManager __instance)
-        {
-            loadText = GameObject.Instantiate(__instance.errorPopup.InfoText, __instance.logoAnimFinish.transform.FindChild("LogoRoot").FindChild("ISLogo"));
-            loadText.transform.localPosition = new(0, __instance.logoAnimFinish.transform.FindChild("LogoRoot").FindChild("ISLogo").position.y - 1.18f, 0);
-            loadText.fontStyle = TMPro.FontStyles.Bold;
-            loadText.text = "\n\nWelcome to TheOtherRoles Community Edition";
-            //loadText.color = Color.white.AlphaMultiplied(0.3f);
-            loadText.color = Color.cyan;
-            loadText.SetActive(__instance.logoAnimFinish.enabled);
-            return true;
         }
     }
 }
