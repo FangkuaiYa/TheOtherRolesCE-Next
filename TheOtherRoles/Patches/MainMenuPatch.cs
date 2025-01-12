@@ -324,7 +324,7 @@ TheOtherUs-Edited(mxyx-club) - Some codes</size>";
             if (rpap) UnityEngine.Object.Destroy(rpap);
             RightPanelOp = RightPanel.transform.localPosition;
             RightPanel.transform.localPosition = RightPanelOp + new Vector3(10f, 0f, 0f);
-            RightPanel.GetComponent<SpriteRenderer>().color = new(0.498f, 1f, 0.831f, 1f);
+            RightPanel.GetComponent<SpriteRenderer>().color = new(0.38f, 0.04f, 1.01f, 1f);
 
             CloseRightButton = new GameObject("CloseRightPanelButton");
             CloseRightButton.transform.SetParent(RightPanel.transform);
@@ -333,14 +333,14 @@ TheOtherUs-Edited(mxyx-club) - Some codes</size>";
             CloseRightButton.AddComponent<BoxCollider2D>().size = new(0.6f, 1.5f);
             var closeRightSpriteRenderer = CloseRightButton.AddComponent<SpriteRenderer>();
             closeRightSpriteRenderer.sprite = CustomMain.customZips.RightPanelCloseButton;
-            closeRightSpriteRenderer.color = new(0.498f, 1f, 0.831f, 1f);
+            closeRightSpriteRenderer.color = new(0.38f, 0.04f, 1.01f, 1f);
             var closeRightPassiveButton = CloseRightButton.AddComponent<PassiveButton>();
             closeRightPassiveButton.OnClick = new();
             closeRightPassiveButton.OnClick.AddListener((System.Action)MainMenuManagerPatch.HideRightPanel);
             closeRightPassiveButton.OnMouseOut = new();
-            closeRightPassiveButton.OnMouseOut.AddListener((System.Action)(() => closeRightSpriteRenderer.color = new(0.498f, 1f, 0.831f, 1f)));
+            closeRightPassiveButton.OnMouseOut.AddListener((System.Action)(() => closeRightSpriteRenderer.color = new(0.38f, 0.04f, 1.01f, 1f)));
             closeRightPassiveButton.OnMouseOver = new();
-            closeRightPassiveButton.OnMouseOver.AddListener((System.Action)(() => closeRightSpriteRenderer.color = new(0.462f, 0.933f, 0.776f, 1f)));
+            closeRightPassiveButton.OnMouseOver.AddListener((System.Action)(() => closeRightSpriteRenderer.color = new(0.38f, 0.04f, 1.01f, 1f)));
 
             Tint = __instance.screenTint.gameObject;
             var ttap = Tint.GetComponent<AspectPosition>();
