@@ -30,7 +30,7 @@ public static class MapUtilities
 
         var systems = CachedShipStatus.Systems;
         if (systems.Count <= 0) return;
-        
+
         foreach (var systemTypes in SystemTypeHelpers.AllTypes)
         {
             if (!systems.ContainsKey(systemTypes)) continue;

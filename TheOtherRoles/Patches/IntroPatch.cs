@@ -1,77 +1,100 @@
-using HarmonyLib;
 using System;
-using static TheOtherRoles.TheOtherRoles;
-using TheOtherRoles.Objects;
-using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using HarmonyLib;
 using Hazel;
+using TheOtherRoles.CustomGameModes;
+using TheOtherRoles.Modules;
+using TheOtherRoles.Objects;
 using TheOtherRoles.Players;
 using TheOtherRoles.Utilities;
-using TheOtherRoles.CustomGameModes;
+using UnityEngine;
+using static TheOtherRoles.TheOtherRoles;
 
-namespace TheOtherRoles.Patches {
+namespace TheOtherRoles.Patches
+{
     [HarmonyPatch(typeof(IntroCutscene), nameof(IntroCutscene.OnDestroy))]
     class IntroCutsceneOnDestroyPatch
     {
         public static PoolablePlayer playerPrefab;
         public static Vector3 bottomLeft;
-        public static void Prefix(IntroCutscene __instance) {
+        public static void Prefix(IntroCutscene __instance)
+        {
             // Generate and initialize player icons
             int playerCounter = 0;
             int hideNSeekCounter = 0;
-            if (CachedPlayer.LocalPlayer != null && FastDestroyableSingleton<HudManager>.Instance != null) {
+            if (CachedPlayer.LocalPlayer != null && FastDestroyableSingleton<HudManager>.Instance != null)
+            {
                 float aspect = Camera.main.aspect;
                 float safeOrthographicSize = CameraSafeArea.GetSafeOrthographicSize(Camera.main);
                 float xpos = 1.75f - safeOrthographicSize * aspect * 1.70f;
                 float ypos = 0.15f - safeOrthographicSize * 1.7f;
-                bottomLeft = new Vector3(xpos / 2, ypos/2, -61f);
+                bottomLeft = new Vector3(xpos / 2, ypos / 2, -61f);
 
-                foreach (PlayerControl p in CachedPlayer.AllPlayers) {
-                    GameData.PlayerInfo data = p.Data;
+                foreach (PlayerControl p in CachedPlayer.AllPlayers)
+                {
+                    NetworkedPlayerInfo data = p.Data;
                     PoolablePlayer player = UnityEngine.Object.Instantiate<PoolablePlayer>(__instance.PlayerPrefab, FastDestroyableSingleton<HudManager>.Instance.transform);
                     playerPrefab = __instance.PlayerPrefab;
                     p.SetPlayerMaterialColors(player.cosmetics.currentBodySprite.BodySprite);
                     player.SetSkin(data.DefaultOutfit.SkinId, data.DefaultOutfit.ColorId);
                     player.cosmetics.SetHat(data.DefaultOutfit.HatId, data.DefaultOutfit.ColorId);
-                   // PlayerControl.SetPetImage(data.DefaultOutfit.PetId, data.DefaultOutfit.ColorId, player.PetSlot);
+                    // PlayerControl.SetPetImage(data.DefaultOutfit.PetId, data.DefaultOutfit.ColorId, player.PetSlot);
                     player.cosmetics.nameText.text = data.PlayerName;
                     player.SetFlipX(true);
                     MapOptionsTor.playerIcons[p.PlayerId] = player;
                     player.gameObject.SetActive(false);
 
-                    if (CachedPlayer.LocalPlayer.PlayerControl == Arsonist.arsonist && p != Arsonist.arsonist) {
+                    if (CachedPlayer.LocalPlayer.PlayerControl == Arsonist.arsonist && p != Arsonist.arsonist)
+                    {
                         Arsonist.poolIcons.Add(player);
                         player.transform.localPosition = bottomLeft + new Vector3(-0.25f, -0.25f, 0) + Vector3.right * playerCounter++ * 0.35f;
                         player.transform.localScale = Vector3.one * 0.2f;
                         player.setSemiTransparent(true);
                         player.gameObject.SetActive(true);
-                    } else if (HideNSeek.isHideNSeekGM) {
-                        if (HideNSeek.isHunted() && p.Data.Role.IsImpostor) {
+                    }
+                    else if (HideNSeek.isHideNSeekGM)
+                    {
+                        if (HideNSeek.isHunted() && p.Data.Role.IsImpostor)
+                        {
                             player.transform.localPosition = bottomLeft + new Vector3(-0.25f, 0.4f, 0) + Vector3.right * playerCounter++ * 0.6f;
                             player.transform.localScale = Vector3.one * 0.3f;
-                            player.cosmetics.nameText.text += $"{Helpers.cs(Color.red, " (Hunter)")}";
+                            player.cosmetics.nameText.text += $"{Helpers.cs(Color.red, $" {ModTranslation.GetString("Text", 2)}")}";
                             player.gameObject.SetActive(true);
-                        } else if (!p.Data.Role.IsImpostor) {
+                        }
+                        else if (!p.Data.Role.IsImpostor)
+                        {
                             player.transform.localPosition = bottomLeft + new Vector3(-0.35f, -0.25f, 0) + Vector3.right * hideNSeekCounter++ * 0.35f;
                             player.transform.localScale = Vector3.one * 0.2f;
                             player.setSemiTransparent(true);
                             player.gameObject.SetActive(true);
                         }
-
-                    } else {   //  This can be done for all players not just for the bounty hunter as it was before. Allows the thief to have the correct position and scaling
+                    }
+                    else if (PropHunt.isPropHuntGM)
+                    {
+                        player.transform.localPosition = bottomLeft + new Vector3(-1.25f, -0.1f, 0) + Vector3.right * hideNSeekCounter++ * 0.4f;
+                        player.transform.localScale = Vector3.one * 0.24f;
+                        player.setSemiTransparent(false);
+                        player.cosmetics.nameText.transform.localPosition += Vector3.up * 0.2f * (hideNSeekCounter % 2 == 0 ? 1 : -1);
+                        player.SetFlipX(false);
+                        player.gameObject.SetActive(true);
+                    }
+                    else
+                    {   //  This can be done for all players not just for the bounty hunter as it was before. Allows the thief to have the correct position and scaling
                         player.transform.localPosition = bottomLeft;
                         player.transform.localScale = Vector3.one * 0.4f;
                         player.gameObject.SetActive(false);
-					}
+                    }
 
                 }
             }
 
             // Force Bounty Hunter to load a new Bounty when the Intro is over
-            if (BountyHunter.bounty != null && CachedPlayer.LocalPlayer.PlayerControl == BountyHunter.bountyHunter) {
+            if (BountyHunter.bounty != null && CachedPlayer.LocalPlayer.PlayerControl == BountyHunter.bountyHunter)
+            {
                 BountyHunter.bountyUpdateTimer = 0f;
-                if (FastDestroyableSingleton<HudManager>.Instance != null) {
+                if (FastDestroyableSingleton<HudManager>.Instance != null)
+                {
                     BountyHunter.cooldownText = UnityEngine.Object.Instantiate<TMPro.TextMeshPro>(FastDestroyableSingleton<HudManager>.Instance.KillButton.cooldownTimerText, FastDestroyableSingleton<HudManager>.Instance.transform);
                     BountyHunter.cooldownText.alignment = TMPro.TextAlignmentOptions.Center;
                     BountyHunter.cooldownText.transform.localPosition = bottomLeft + new Vector3(0f, -0.35f, -62f);
@@ -81,9 +104,10 @@ namespace TheOtherRoles.Patches {
             }
 
             // Force Reload of SoundEffectHolder
-            SoundEffectsManager.Load();
+            //SoundEffectsManager.Load();
 
-            if (CustomOptionHolder.randomGameStartPosition.getBool()) { //Random spawn on game start
+            if (CustomOptionHolder.randomGameStartPosition.getBool())
+            { //Random spawn on game start
 
                 List<Vector3> skeldSpawn = new List<Vector3>() {
                 new Vector3(-2.2f, 2.2f, 0.0f), //cafeteria. botton. top left.
@@ -183,10 +207,10 @@ namespace TheOtherRoles.Patches {
                 new Vector3(5f, -9f, 0.0f), //elec window
                 new Vector3(4f, -11.2f, 0.0f), //elec tapes
                 new Vector3(5.5f, -16f, 0.0f), //elec-O2 hall
-                new Vector3(1f, -17.5f, 0.0f), //O2 tree hayball
+                new Vector3(1.2f, -17.5f, 0.0f), //O2 tree hayball
                 new Vector3(3f, -21f, 0.0f), //O2 middle
                 new Vector3(2f, -19f, 0.0f), //O2 gas
-                new Vector3(1f, -24f, 0.0f), //O2 water
+                new Vector3(1.4f, -24f, 0.0f), //O2 water
                 new Vector3(7f, -24f, 0.0f), //under O2
                 new Vector3(9f, -20f, 0.0f), //right outside of O2
                 new Vector3(7f, -15.8f, 0.0f), //snowman under elec
@@ -237,6 +261,35 @@ namespace TheOtherRoles.Patches {
                 new Vector3(10.5f, -2.0f, 0.0f), //medbay top
                 new Vector3(6.5f, -4.5f, 0.0f) //medbay bottom
                 };
+                List<Vector3> fungleSpawn = new List<Vector3>() {
+                new Vector3(-10.0842f, 13.0026f, 0.013f),
+                new Vector3(0.9815f, 6.7968f, 0.0068f),
+                new Vector3(22.5621f, 3.2779f, 0.0033f),
+                new Vector3(-1.8699f, -1.3406f, -0.0013f),
+                new Vector3(12.0036f, 2.6763f, 0.0027f),
+                new Vector3(21.705f, -7.8691f, -0.0079f),
+                new Vector3(1.4485f, -1.6105f, -0.0016f),
+                new Vector3(-4.0766f, -8.7178f, -0.0087f),
+                new Vector3(2.9486f, 1.1347f, 0.0011f),
+                new Vector3(-4.2181f, -8.6795f, -0.0087f),
+                new Vector3(19.5553f, -12.5014f, -0.0125f),
+                new Vector3(15.2497f, -16.5009f, -0.0165f),
+                new Vector3(-22.7174f, -7.0523f, 0.0071f),
+                new Vector3(-16.5819f, -2.1575f, 0.0022f),
+                new Vector3(9.399f, -9.7127f, -0.0097f),
+                new Vector3(7.3723f, 1.7373f, 0.0017f),
+                new Vector3(22.0777f, -7.9315f, -0.0079f),
+                new Vector3(-15.3916f, -9.3659f, -0.0094f),
+                new Vector3(-16.1207f, -0.1746f, -0.0002f),
+                new Vector3(-23.1353f, -7.2472f, -0.0072f),
+                new Vector3(-20.0692f, -2.6245f, -0.0026f),
+                new Vector3(-4.2181f, -8.6795f, -0.0087f),
+                new Vector3(-9.9285f, 12.9848f, 0.013f),
+                new Vector3(-8.3475f, 1.6215f, 0.0016f),
+                new Vector3(-17.7614f, 6.9115f, 0.0069f),
+                new Vector3(-0.5743f, -4.7235f, -0.0047f),
+                new Vector3(-20.8897f, 2.7606f, 0.002f)
+                };
 
                 List<Vector3> airshipSpawn = new List<Vector3>() { }; //no spawns since it already has random spawns
 
@@ -245,32 +298,43 @@ namespace TheOtherRoles.Patches {
                 if (GameOptionsManager.Instance.currentNormalGameOptions.MapId == 2) CachedPlayer.LocalPlayer.PlayerControl.transform.position = polusSpawn[rnd.Next(polusSpawn.Count)];
                 if (GameOptionsManager.Instance.currentNormalGameOptions.MapId == 3) CachedPlayer.LocalPlayer.PlayerControl.transform.position = dleksSpawn[rnd.Next(dleksSpawn.Count)];
                 if (GameOptionsManager.Instance.currentNormalGameOptions.MapId == 4) CachedPlayer.LocalPlayer.PlayerControl.transform.position = airshipSpawn[rnd.Next(airshipSpawn.Count)];
-
+                if (GameOptionsManager.Instance.currentNormalGameOptions.MapId == 5) CachedPlayer.LocalPlayer.PlayerControl.transform.position = fungleSpawn[rnd.Next(fungleSpawn.Count)];
             }
-            if (CustomOptionHolder.resetRoundStartCooldown.getBool()) { //reset cooldown on round start
+            if (CustomOptionHolder.resetRoundStartCooldown.getBool())
+            { //reset cooldown on round start
                 CachedPlayer.LocalPlayer.PlayerControl.killTimer = 60; //set imp cooldown to the max
                 CustomButton.ResetAllCooldowns(); //reset button cooldowns
             }
 
             // First kill
-            if (AmongUsClient.Instance.AmHost && MapOptionsTor.shieldFirstKill && MapOptionsTor.firstKillName != "" && !HideNSeek.isHideNSeekGM) {
+            if (AmongUsClient.Instance.AmHost && MapOptionsTor.shieldFirstKill && MapOptionsTor.firstKillName != "" && !HideNSeek.isHideNSeekGM && !PropHunt.isPropHuntGM)
+            {
                 PlayerControl target = PlayerControl.AllPlayerControls.ToArray().ToList().FirstOrDefault(x => x.Data.PlayerName.Equals(MapOptionsTor.firstKillName));
-                if (target != null) {
+                if (target != null)
+                {
                     MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(CachedPlayer.LocalPlayer.PlayerControl.NetId, (byte)CustomRPC.SetFirstKill, Hazel.SendOption.Reliable, -1);
                     writer.Write(target.PlayerId);
                     AmongUsClient.Instance.FinishRpcImmediately(writer);
                     RPCProcedure.setFirstKill(target.PlayerId);
                 }
             }
+            HudManager.Instance.ShowVanillaKeyGuide();
+
             MapOptionsTor.firstKillName = "";
 
-            if (HideNSeek.isHideNSeekGM) {
-                foreach (PlayerControl player in HideNSeek.getHunters()) {
+            EventUtility.gameStartsUpdate();
+
+            if (HideNSeek.isHideNSeekGM)
+            {
+                foreach (PlayerControl player in HideNSeek.getHunters())
+                {
                     player.moveable = false;
                     player.NetTransform.Halt();
                     HideNSeek.timer = HideNSeek.hunterWaitingTime;
-                    FastDestroyableSingleton<HudManager>.Instance.StartCoroutine(Effects.Lerp(HideNSeek.hunterWaitingTime, new Action<float>((p) => {
-                        if (p == 1f) {
+                    FastDestroyableSingleton<HudManager>.Instance.StartCoroutine(Effects.Lerp(HideNSeek.hunterWaitingTime, new Action<float>((p) =>
+                    {
+                        if (p == 1f)
+                        {
                             player.moveable = true;
                             HideNSeek.timer = CustomOptionHolder.hideNSeekTimer.getFloat() * 60;
                             HideNSeek.isWaitingTimer = false;
@@ -279,7 +343,8 @@ namespace TheOtherRoles.Patches {
                     player.MyPhysics.SetBodyType(PlayerBodyTypes.Seeker);
                 }
 
-                if (HideNSeek.polusVent == null && GameOptionsManager.Instance.currentNormalGameOptions.MapId == 2) {
+                if (HideNSeek.polusVent == null && GameOptionsManager.Instance.currentNormalGameOptions.MapId == 2)
+                {
                     var list = GameObject.FindObjectsOfType<Vent>().ToList();
                     var adminVent = list.FirstOrDefault(x => x.gameObject.name == "AdminVent");
                     var bathroomVent = list.FirstOrDefault(x => x.gameObject.name == "BathroomVent");
@@ -312,38 +377,35 @@ namespace TheOtherRoles.Patches {
     }
 
     [HarmonyPatch]
-    class IntroPatch {
-        public static void setupIntroTeamIcons(IntroCutscene __instance, ref  Il2CppSystem.Collections.Generic.List<PlayerControl> yourTeam) {
+    class IntroPatch
+    {
+        public static void setupIntroTeamIcons(IntroCutscene __instance, ref Il2CppSystem.Collections.Generic.List<PlayerControl> yourTeam)
+        {
             // Intro solo teams
-            if (CachedPlayer.LocalPlayer.PlayerControl == Jester.jester || CachedPlayer.LocalPlayer.PlayerControl == Pursuer.pursuer || CachedPlayer.LocalPlayer.PlayerControl == Swooper.swooper || CachedPlayer.LocalPlayer.PlayerControl == Werewolf.werewolf || CachedPlayer.LocalPlayer.PlayerControl == Jackal.jackal || CachedPlayer.LocalPlayer.PlayerControl == Arsonist.arsonist || CachedPlayer.LocalPlayer.PlayerControl == Vulture.vulture) {
+            if (CachedPlayer.LocalPlayer.PlayerControl == Jester.jester || CachedPlayer.LocalPlayer.PlayerControl == Pursuer.pursuer || CachedPlayer.LocalPlayer.PlayerControl == Swooper.swooper || CachedPlayer.LocalPlayer.PlayerControl == Werewolf.werewolf || CachedPlayer.LocalPlayer.PlayerControl == Jackal.jackal || CachedPlayer.LocalPlayer.PlayerControl == Arsonist.arsonist || CachedPlayer.LocalPlayer.PlayerControl == Vulture.vulture)
+            {
                 var soloTeam = new Il2CppSystem.Collections.Generic.List<PlayerControl>();
                 soloTeam.Add(CachedPlayer.LocalPlayer.PlayerControl);
-                yourTeam = soloTeam;
-            }
-			
-            // Intro Exe and Target
-            if (CachedPlayer.LocalPlayer.PlayerControl == Prosecutor.prosecutor) {
-                var soloTeam = new Il2CppSystem.Collections.Generic.List<PlayerControl>();
-                soloTeam.Add(CachedPlayer.LocalPlayer.PlayerControl);
-				soloTeam.Add(Prosecutor.target);
                 yourTeam = soloTeam;
             }
 
-            
             // Intro Lawyer and Client
-            if (CachedPlayer.LocalPlayer.PlayerControl == Lawyer.lawyer) {
+            if (CachedPlayer.LocalPlayer.PlayerControl == Lawyer.lawyer)
+            {
                 var soloTeam = new Il2CppSystem.Collections.Generic.List<PlayerControl>();
                 soloTeam.Add(CachedPlayer.LocalPlayer.PlayerControl);
-				soloTeam.Add(Lawyer.target);
+                soloTeam.Add(Lawyer.target);
                 yourTeam = soloTeam;
             }
 
             // Add the Spy to the Impostor team (for the Impostors)
-            if (Spy.spy != null && CachedPlayer.LocalPlayer.Data.Role.IsImpostor) {
+            if (Spy.spy != null && CachedPlayer.LocalPlayer.Data.Role.IsImpostor)
+            {
                 List<PlayerControl> players = PlayerControl.AllPlayerControls.ToArray().ToList().OrderBy(x => Guid.NewGuid()).ToList();
                 var fakeImpostorTeam = new Il2CppSystem.Collections.Generic.List<PlayerControl>(); // The local player always has to be the first one in the list (to be displayed in the center)
                 fakeImpostorTeam.Add(CachedPlayer.LocalPlayer.PlayerControl);
-                foreach (PlayerControl p in players) {
+                foreach (PlayerControl p in players)
+                {
                     if (CachedPlayer.LocalPlayer.PlayerControl != p && (p == Spy.spy || p.Data.Role.IsImpostor))
                         fakeImpostorTeam.Add(p);
                 }
@@ -351,85 +413,113 @@ namespace TheOtherRoles.Patches {
             }
         }
 
-        public static void setupIntroTeam(IntroCutscene __instance, ref  Il2CppSystem.Collections.Generic.List<PlayerControl> yourTeam) {
+        public static void setupIntroTeam(IntroCutscene __instance, ref Il2CppSystem.Collections.Generic.List<PlayerControl> yourTeam)
+        {
             List<RoleInfo> infos = RoleInfo.getRoleInfoForPlayer(CachedPlayer.LocalPlayer.PlayerControl);
             RoleInfo roleInfo = infos.Where(info => !info.isModifier).FirstOrDefault();
             if (roleInfo == null) return;
-            if (roleInfo.isNeutral) {
-                var neutralColor = new Color32(76, 84, 78, 255);
+            if (roleInfo.isNeutral)
+            {
+                var neutralColor = Color.gray;
                 __instance.BackgroundBar.material.color = roleInfo.color;
-                __instance.TeamTitle.text = roleInfo.name;
-                __instance.TeamTitle.color = roleInfo.color;
-            } else {
-                bool isCrew = true;
-                if (roleInfo.color == Palette.ImpostorRed) isCrew = false;
-                if (isCrew) {
+                __instance.TeamTitle.text = ModTranslation.GetString("Text", 47);
+                __instance.TeamTitle.color = neutralColor;
+            }
+            else
+            {
+                if (!PlayerControl.LocalPlayer.Data.Role.IsImpostor)
+                {
                     __instance.BackgroundBar.material.color = roleInfo.color;
-                    __instance.TeamTitle.text = "Crewmate";
+                    __instance.TeamTitle.text = ModTranslation.GetString("Text", 48);
                     __instance.TeamTitle.color = Color.cyan;
-                } else {
+                }
+                else
+                {
                     __instance.BackgroundBar.material.color = roleInfo.color;
-                    __instance.TeamTitle.text = "Impostor";
+                    __instance.TeamTitle.text = ModTranslation.GetString("Text", 49);
                     __instance.TeamTitle.color = Palette.ImpostorRed;
                 }
             }
         }
-
-        public static IEnumerator<WaitForSeconds> EndShowRole(IntroCutscene __instance) {
+        public static IEnumerator<WaitForSeconds> EndShowRole(IntroCutscene __instance)
+        {
             yield return new WaitForSeconds(5f);
             __instance.YouAreText.gameObject.SetActive(false);
             __instance.RoleText.gameObject.SetActive(false);
             __instance.RoleBlurbText.gameObject.SetActive(false);
             __instance.ourCrewmate.gameObject.SetActive(false);
-           
+
         }
 
         [HarmonyPatch(typeof(IntroCutscene), nameof(IntroCutscene.CreatePlayer))]
-        class CreatePlayerPatch {
-            public static void Postfix(IntroCutscene __instance, bool impostorPositioning, ref PoolablePlayer __result) {
+        class CreatePlayerPatch
+        {
+            public static void Postfix(IntroCutscene __instance, bool impostorPositioning, ref PoolablePlayer __result)
+            {
                 if (impostorPositioning) __result.SetNameColor(Palette.ImpostorRed);
             }
         }
 
 
         [HarmonyPatch(typeof(IntroCutscene), nameof(IntroCutscene.ShowRole))]
-        class SetUpRoleTextPatch {
-            static public void SetRoleTexts(IntroCutscene __instance) {
+        class SetUpRoleTextPatch
+        {
+            static int seed = 0;
+            static public void SetRoleTexts(IntroCutscene __instance)
+            {
                 // Don't override the intro of the vanilla roles
                 List<RoleInfo> infos = RoleInfo.getRoleInfoForPlayer(CachedPlayer.LocalPlayer.PlayerControl);
                 RoleInfo roleInfo = infos.Where(info => !info.isModifier).FirstOrDefault();
                 RoleInfo modifierInfo = infos.Where(info => info.isModifier).FirstOrDefault();
+
+                if (EventUtility.isEnabled)
+                {
+                    var roleInfos = RoleInfo.allRoleInfos.Where(x => !x.isModifier).ToList();
+                    if (roleInfo.isNeutral) roleInfos.RemoveAll(x => !x.isNeutral);
+                    if (roleInfo.color == Palette.ImpostorRed) roleInfos.RemoveAll(x => x.color != Palette.ImpostorRed);
+                    if (!roleInfo.isNeutral && roleInfo.color != Palette.ImpostorRed) roleInfos.RemoveAll(x => x.color == Palette.ImpostorRed || x.isNeutral);
+                    var rnd = new System.Random(seed);
+                    roleInfo = roleInfos[rnd.Next(roleInfos.Count)];
+                }
+
                 __instance.RoleBlurbText.text = "";
-                if (roleInfo != null) {
+                if (roleInfo != null)
+                {
                     __instance.RoleText.text = roleInfo.name;
                     __instance.RoleText.color = roleInfo.color;
                     __instance.RoleBlurbText.text = roleInfo.introDescription;
                     __instance.RoleBlurbText.color = roleInfo.color;
                 }
-                if (modifierInfo != null) {
+                if (modifierInfo != null)
+                {
                     if (modifierInfo.roleId != RoleId.Lover)
                         __instance.RoleBlurbText.text += Helpers.cs(modifierInfo.color, $"\n{modifierInfo.introDescription}");
-                    else {
+                    else
+                    {
                         PlayerControl otherLover = CachedPlayer.LocalPlayer.PlayerControl == Lovers.lover1 ? Lovers.lover2 : Lovers.lover1;
-                        __instance.RoleBlurbText.text += Helpers.cs(Lovers.color, $"\n♥ You are in love with {otherLover?.Data?.PlayerName ?? ""} ♥");
+                        __instance.RoleBlurbText.text += Helpers.cs(Lovers.color, $"\n♥ " + string.Format(ModTranslation.GetString("Text", 3), otherLover?.Data?.PlayerName ?? "") + " ♥");
                     }
                 }
-				
-				if (infos.Any(info => info.roleId == RoleId.Prosecutor)) {
-                    PlayerControl target = Prosecutor.target;
-                    __instance.RoleBlurbText.text += Helpers.cs(Prosecutor.color, $"\nVote out {target?.Data?.PlayerName ?? ""} ");
+
+                if (infos.Any(info => info.roleId == RoleId.Prosecutor))
+                {
+                    PlayerControl target = Lawyer.target;
+                    __instance.RoleBlurbText.text += Helpers.cs(Lawyer.color, $"\n" + string.Format(ModTranslation.GetString("Text", 4), target?.Data?.PlayerName ?? "") + " ");
                 }
 
-                if (Deputy.knowsSheriff && Deputy.deputy != null && Sheriff.sheriff != null) {
+                if (Deputy.knowsSheriff && Deputy.deputy != null && Sheriff.sheriff != null)
+                {
                     if (infos.Any(info => info.roleId == RoleId.Sheriff))
-                        __instance.RoleBlurbText.text += Helpers.cs(Sheriff.color, $"\nYour Deputy is {Deputy.deputy?.Data?.PlayerName ?? ""}");
+                        __instance.RoleBlurbText.text += Helpers.cs(Sheriff.color, $"\n" + string.Format(ModTranslation.GetString("Text", 5), Deputy.deputy?.Data?.PlayerName ?? ""));
                     else if (infos.Any(info => info.roleId == RoleId.Deputy))
-                        __instance.RoleBlurbText.text += Helpers.cs(Sheriff.color, $"\nYour Sheriff is {Sheriff.sheriff?.Data?.PlayerName ?? ""}");
+                        __instance.RoleBlurbText.text += Helpers.cs(Sheriff.color, $"\n" + string.Format(ModTranslation.GetString("Text", 6), Sheriff.sheriff?.Data?.PlayerName ?? ""));
                 }
             }
-            public static bool Prefix(IntroCutscene __instance) {
-                if (!CustomOptionHolder.activateRoles.getBool()) return true;
-                FastDestroyableSingleton<HudManager>.Instance.StartCoroutine(Effects.Lerp(1f, new Action<float>((p) => {
+            public static bool Prefix(IntroCutscene __instance)
+            {
+                seed = rnd.Next(5000);
+                FastDestroyableSingleton<HudManager>.Instance.StartCoroutine(Effects.Lerp(1f, new Action<float>((p) =>
+                {
                     SetRoleTexts(__instance);
                 })));
                 return true;
@@ -437,39 +527,52 @@ namespace TheOtherRoles.Patches {
         }
 
         [HarmonyPatch(typeof(IntroCutscene), nameof(IntroCutscene.BeginCrewmate))]
-        class BeginCrewmatePatch {
-            public static void Prefix(IntroCutscene __instance, ref  Il2CppSystem.Collections.Generic.List<PlayerControl> teamToDisplay) {
+        class BeginCrewmatePatch
+        {
+            public static void Prefix(IntroCutscene __instance, ref Il2CppSystem.Collections.Generic.List<PlayerControl> teamToDisplay)
+            {
                 setupIntroTeamIcons(__instance, ref teamToDisplay);
             }
 
-            public static void Postfix(IntroCutscene __instance, ref  Il2CppSystem.Collections.Generic.List<PlayerControl> teamToDisplay) {
+            public static void Postfix(IntroCutscene __instance, ref Il2CppSystem.Collections.Generic.List<PlayerControl> teamToDisplay)
+            {
                 setupIntroTeam(__instance, ref teamToDisplay);
             }
         }
 
         [HarmonyPatch(typeof(IntroCutscene), nameof(IntroCutscene.BeginImpostor))]
-        class BeginImpostorPatch {
-            public static void Prefix(IntroCutscene __instance, ref  Il2CppSystem.Collections.Generic.List<PlayerControl> yourTeam) {
+        class BeginImpostorPatch
+        {
+            public static void Prefix(IntroCutscene __instance, ref Il2CppSystem.Collections.Generic.List<PlayerControl> yourTeam)
+            {
                 setupIntroTeamIcons(__instance, ref yourTeam);
             }
 
-            public static void Postfix(IntroCutscene __instance, ref  Il2CppSystem.Collections.Generic.List<PlayerControl> yourTeam) {
+            public static void Postfix(IntroCutscene __instance, ref Il2CppSystem.Collections.Generic.List<PlayerControl> yourTeam)
+            {
                 setupIntroTeam(__instance, ref yourTeam);
             }
         }
     }
 
-    /*[HarmonyPatch(typeof(Constants), nameof(Constants.ShouldHorseAround))]
-    public static class ShouldAlwaysHorseAround {
-        public static bool isHorseMode;
-        public static bool Prefix(ref bool __result) {
-            if (isHorseMode != MapOptionsTor.enableHorseMode && LobbyBehaviour.Instance != null) __result = isHorseMode;
-            else {
-                __result = MapOptionsTor.enableHorseMode;
-                isHorseMode = MapOptionsTor.enableHorseMode;
-            }
-            return false;
+    //Horse are lost in 2024.6.4 also if is HorseMod the Swooper can use
+    /* [HarmonyPatch(typeof(AprilFoolsMode), nameof(AprilFoolsMode.ShouldHorseAround))]
+     public static class ShouldAlwaysHorseAround
+     {
+         public static bool Prefix(ref bool __result)
+         {
+             __result = EventUtility.isEnabled && !EventUtility.disableEventMode;
+             return false;
+         }
+     }*/
+
+    [HarmonyPatch(typeof(AprilFoolsMode), nameof(AprilFoolsMode.ShouldShowAprilFoolsToggle))]
+    public static class ShouldShowAprilFoolsToggle
+    {
+        public static void Postfix(ref bool __result)
+        {
+            __result = __result || EventUtility.isEventDate || EventUtility.canBeEnabled;
         }
-    }*/
+    }
 }
 

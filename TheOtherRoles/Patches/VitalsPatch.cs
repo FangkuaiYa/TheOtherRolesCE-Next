@@ -1,14 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using HarmonyLib;
 using Hazel;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UnityEngine;
-using static TheOtherRoles.TheOtherRoles;
-using static TheOtherRoles.GameHistory;
-using System.Reflection;
 using TheOtherRoles.Players;
-using AmongUs.GameOptions;
+using UnityEngine;
+using static TheOtherRoles.GameHistory;
 
 
 namespace TheOtherRoles.Patches
@@ -95,7 +92,7 @@ namespace TheOtherRoles.Patches
                     }
 
                     string timeString = TimeSpan.FromSeconds(MapOptionsTor.restrictVitalsTime).ToString(@"mm\:ss\.ff");
-                    TimeRemaining.text = String.Format("Remaining: {0}", timeString);
+                    TimeRemaining.text = String.Format(ModTranslation.GetString("AdminText", 2), timeString);
                     TimeRemaining.gameObject.SetActive(true);
                 }
 
@@ -111,17 +108,17 @@ namespace TheOtherRoles.Patches
                     for (int k = 0; k < __instance.vitals.Length; k++)
                     {
                         VitalsPanel vitalsPanel = __instance.vitals[k];
-                        GameData.PlayerInfo player = GameData.Instance.AllPlayers[k];
+                        NetworkedPlayerInfo player = GameData.Instance.AllPlayers[k];
 
                         // Hacker update
                         if (vitalsPanel.IsDead)
                         {
                             DeadPlayer deadPlayer = deadPlayers?.Where(x => x.player?.PlayerId == player?.PlayerId)?.FirstOrDefault();
-                            if (deadPlayer != null && deadPlayer.timeOfDeath != null && k < hackerTexts.Count && hackerTexts[k] != null)
+                            if (deadPlayer != null && k < hackerTexts.Count && hackerTexts[k] != null)
                             {
                                 float timeSinceDeath = ((float)(DateTime.UtcNow - deadPlayer.timeOfDeath).TotalMilliseconds);
                                 hackerTexts[k].gameObject.SetActive(true);
-                                hackerTexts[k].text = Math.Round(timeSinceDeath / 1000) + "s";
+                                hackerTexts[k].text = Math.Round(timeSinceDeath / 1000) + ModTranslation.GetString("Text", 42);
                             }
                         }
                     }

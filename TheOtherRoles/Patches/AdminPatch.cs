@@ -1,12 +1,12 @@
-using HarmonyLib;
-using Hazel;
 using System;
 using System.Collections.Generic;
-using UnityEngine;
-using static TheOtherRoles.TheOtherRoles;
+using HarmonyLib;
+using Hazel;
 using TheOtherRoles.Players;
+using UnityEngine;
 
-namespace TheOtherRoles.Patches {
+namespace TheOtherRoles.Patches
+{
     [Harmony]
     public class AdminPatch
     {
@@ -49,7 +49,7 @@ namespace TheOtherRoles.Patches {
         [HarmonyPatch(typeof(MapConsole), nameof(MapConsole.CanUse))]
         public static class MapConsoleCanUsePatch
         {
-            public static bool Prefix(ref float __result, MapConsole __instance, [HarmonyArgument(0)] GameData.PlayerInfo pc, [HarmonyArgument(1)] out bool canUse, [HarmonyArgument(2)] out bool couldUse)
+            public static bool Prefix(ref float __result, MapConsole __instance, [HarmonyArgument(0)] NetworkedPlayerInfo pc, [HarmonyArgument(1)] out bool canUse, [HarmonyArgument(2)] out bool couldUse)
             {
                 canUse = couldUse = false;
                 return true;
@@ -109,7 +109,7 @@ namespace TheOtherRoles.Patches {
                     if (OutOfTime == null)
                     {
                         OutOfTime = UnityEngine.Object.Instantiate(__instance.SabotageText, __instance.SabotageText.transform.parent);
-                        OutOfTime.text = "Out of Time";
+                        OutOfTime.text = ModTranslation.GetString("AdminText", 1);
                     }
 
                     if (TimeRemaining == null)
@@ -138,7 +138,7 @@ namespace TheOtherRoles.Patches {
                     clearedIcons = false;
                     OutOfTime.gameObject.SetActive(false);
                     string timeString = TimeSpan.FromSeconds(MapOptionsTor.restrictAdminTime).ToString(@"mm\:ss\.ff");
-                    TimeRemaining.text = String.Format("Remaining: {0}", timeString);
+                    TimeRemaining.text = String.Format(ModTranslation.GetString("AdminText", 2), timeString);
                     //TimeRemaining.color = MapOptionsTor.restrictAdminTime > 10f ? Palette.AcceptedGreen : Palette.ImpostorRed;
                     TimeRemaining.gameObject.SetActive(true);
                 }
@@ -204,7 +204,7 @@ namespace TheOtherRoles.Patches {
                                     DeadBody component = collider2D.GetComponent<DeadBody>();
                                     if (component)
                                     {
-                                        GameData.PlayerInfo playerInfo = GameData.Instance.GetPlayerById(component.ParentId);
+                                        NetworkedPlayerInfo playerInfo = GameData.Instance.GetPlayerById(component.ParentId);
                                         if (playerInfo != null)
                                         {
                                             var color = Palette.PlayerColors[playerInfo.Object.CurrentOutfit.ColorId];
