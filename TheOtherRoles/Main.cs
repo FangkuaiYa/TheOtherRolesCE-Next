@@ -112,7 +112,6 @@ namespace TheOtherRoles
 
             ZipsLoad.Load();
             ModTranslation.Load();
-            Language.Load();
 
             _ = Helpers.checkBeta(); // Exit if running an expired beta
 
