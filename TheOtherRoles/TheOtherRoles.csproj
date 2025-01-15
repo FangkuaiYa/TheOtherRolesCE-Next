@@ -32,9 +32,9 @@
     </ItemGroup>
     </Target>
 
-	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+	<!--<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
 		<Exec Command="$(PythonBin) &quot;$(SolutionDir)stringsToJson.py&quot;" />
-	</Target>
+	</Target>-->
 
 	<Target Name="CopyCustomContent" AfterTargets="AfterBuild" Condition="Exists('$(AmongUsLatest)/BepInEx/plugins/')">
         <Message Text="Second occurrence" />
